@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 interface Job {
   job_id: string;
