@@ -64,45 +64,36 @@ class DockerIsolation:
         - Security options
         """
         if not self.enable_isolation:
-            # Bypass Docker for development
             return None
         
         args = [
             "docker", "run",
             "--rm",  # Remove container after execution
             
-            # Resource limits
             f"--memory={self.max_memory_mb}m",
             f"--memory-swap={self.max_memory_mb}m",  # No swap
             f"--cpus={self.max_cpu_cores}",
             f"--storage-opt=size={self.max_disk_mb}M",
             
-            # Network isolation
             f"--network={self.network}",
             
-            # Security
             "--security-opt=no-new-privileges:true",  # Prevent privilege escalation
             "--cap-drop=ALL",  # Drop all capabilities
             "--read-only",  # Read-only root filesystem
             "--tmpfs=/tmp:rw,noexec,nosuid,size=512m",  # Writable /tmp
             
-            # User (non-root)
             "--user=nobody",  # Run as nobody user
             
-            # Work directory mount (ephemeral)
             f"--volume={work_dir.absolute()}:/work:rw",
             "--workdir=/work",
         ]
         
-        # Environment variables
         if env_vars:
             for key, value in env_vars.items():
                 args.append(f"--env={key}={value}")
         
-        # Container image
         args.append(image)
         
-        # Command
         args.extend(command)
         
         return args
@@ -130,7 +121,6 @@ class DockerIsolation:
         args = self.build_docker_args(image, command, work_dir, env_vars)
         
         if args is None:
-            # Direct execution without Docker (development only)
             logger.warning("Docker isolation disabled - executing directly")
             return self._execute_direct(command, work_dir, env_vars, timeout)
         

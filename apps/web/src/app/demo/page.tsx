@@ -38,7 +38,6 @@ export default function DemoPage() {
     'idle' | 'creating' | 'running' | 'incident' | 'completed'
   >('idle');
 
-  // Load data
   useEffect(() => {
     async function loadData() {
       try {
@@ -48,7 +47,6 @@ export default function DemoPage() {
           api.getIncidents(),
         ]);
 
-        // Find most recent active job
         const runningJob = jobsData.find((j) =>
           ['RUNNING', 'ALLOCATED', 'RECOVERING'].includes(j.status)
         );
@@ -59,7 +57,6 @@ export default function DemoPage() {
 
         setNodes(nodesData);
 
-        // Find active incident
         const activeInc = incidentsData.find(
           (i) => i.status !== 'RESOLVED'
         );
@@ -77,7 +74,6 @@ export default function DemoPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Listen to real-time events
   useRealtimeEvent(
     [
       'job_started',
@@ -122,7 +118,7 @@ export default function DemoPage() {
   };
 
   const healthyNodes = nodes.filter((n) => n.status === 'HEALTHY');
-  const targetNode = healthyNodes[0]; // For failure simulation
+  const targetNode = healthyNodes[0];
 
   const progress = activeJob
     ? calculateProgress(activeJob.completed_frames, activeJob.total_frames)
@@ -131,7 +127,7 @@ export default function DemoPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
+        {}
         <div className="bg-gradient-to-r from-primary-600 to-purple-600 rounded-2xl p-8 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -151,7 +147,7 @@ export default function DemoPage() {
           </div>
         </div>
 
-        {/* Demo Control */}
+        {}
         {demoPhase === 'idle' && (
           <Card className="border-2 border-primary-300 bg-gradient-to-br from-primary-50 to-purple-50">
             <CardBody className="text-center py-12">
@@ -187,10 +183,10 @@ export default function DemoPage() {
           </Card>
         )}
 
-        {/* Active Job */}
+        {}
         {activeJob && (demoPhase === 'running' || demoPhase === 'incident') && (
           <div className="space-y-6">
-            {/* Job Progress */}
+            {}
             <Card className="border-2 border-primary-200">
               <CardHeader className="bg-gradient-to-r from-primary-50 to-purple-50">
                 <div className="flex items-center justify-between">
@@ -249,7 +245,7 @@ export default function DemoPage() {
               </CardBody>
             </Card>
 
-            {/* Failure Simulator (only if not already failed) */}
+            {}
             {!activeIncident && targetNode && (
               <FailureSimulator
                 nodeId={targetNode.node_id}
@@ -257,13 +253,12 @@ export default function DemoPage() {
               />
             )}
 
-            {/* Impact Analysis & Recovery (new enhanced panel) */}
+            {}
             {activeIncident && (
               <ImpactAnalysisPanel
                 nodeId={activeIncident.node_id || activeIncident.related_node_id}
                 incidentId={activeIncident.incident_id}
                 onExecuteRecovery={() => {
-                  // Refresh data after recovery
                   setTimeout(() => {
                     window.location.reload();
                   }, 2000);
@@ -271,12 +266,12 @@ export default function DemoPage() {
               />
             )}
 
-            {/* Original Incident Visualization (fallback) */}
+            {}
             {activeIncident && !activeIncident.node_id && (
               <IncidentRecoveryVisualization incident={activeIncident} />
             )}
 
-            {/* Network Status */}
+            {}
             <Card>
               <CardHeader>
                 <CardTitle>Network Nodes</CardTitle>
@@ -347,7 +342,7 @@ export default function DemoPage() {
           </Card>
         )}
 
-        {/* Live Activity */}
+        {}
         <ActivityFeed />
       </div>
     </DashboardLayout>

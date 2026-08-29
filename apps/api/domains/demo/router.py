@@ -52,13 +52,11 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
     if not node:
         raise HTTPException(status_code=404, detail="Node not found")
     
-    # Mark node as unhealthy
     node.status = NodeStatus.UNHEALTHY
     node.is_healthy = False
     node.last_heartbeat = datetime.utcnow()
     db.commit()
     
-    # Broadcast node failure event
     event = EventFactory.node_failed(
         node_id=node_id,
         incident_id="pending",
@@ -66,7 +64,6 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
     )
     await broadcast_event_async(event)
     
-    # Find active tasks on this node
     active_tasks = db.query(Task).filter(
         Task.assigned_node_id == node_id,
         Task.status.in_([TaskStatus.ASSIGNED, TaskStatus.RUNNING])
@@ -82,7 +79,6 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
     
     job_id = active_tasks[0].job_id
     
-    # Create incident
     incident = Incident(
         incident_type=IncidentType.NODE_CRASH,
         status=IncidentStatus.DETECTED,
@@ -102,7 +98,6 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
         f"with {len(active_tasks)} affected tasks"
     )
     
-    # Broadcast recovery started event
     event = EventFactory.recovery_started(
         incident_id=incident.incident_id,
         job_id=job_id,
@@ -110,7 +105,6 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
     )
     await broadcast_event_async(event)
     
-    # Trigger automatic recovery
     try:
         recovery_service = RecoveryService(db)
         recovery_result = recovery_service.recover_from_node_failure(incident)
@@ -147,7 +141,6 @@ async def reset_demo(db: Session = Depends(get_db)):
     
     logger.warning("DEMO: Resetting demo state")
     
-    # Reset all nodes to healthy
     nodes = db.query(Node).all()
     for node in nodes:
         node.status = NodeStatus.HEALTHY

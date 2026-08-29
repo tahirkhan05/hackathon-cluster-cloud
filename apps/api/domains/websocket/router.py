@@ -38,7 +38,6 @@ class ConnectionManager:
         
         logger.info(f"WebSocket connected: {client_id}. Total: {len(self.active_connections)}")
         
-        # Send connection established event
         welcome_event = EventFactory.connection_established(client_id)
         await self.send_to_client(client_id, welcome_event)
     
@@ -75,7 +74,6 @@ class ConnectionManager:
                 logger.error(f"Error broadcasting to {client_id}: {e}")
                 dead_connections.append(client_id)
         
-        # Clean up dead connections
         for client_id in dead_connections:
             self.disconnect(client_id)
         
@@ -86,7 +84,6 @@ class ConnectionManager:
         return len(self.active_connections)
 
 
-# Global connection manager
 manager = ConnectionManager()
 
 
@@ -107,10 +104,8 @@ async def websocket_endpoint(websocket: WebSocket):
     
     try:
         while True:
-            # Receive messages from client (mostly for keepalive)
             data = await websocket.receive_text()
             
-            # Handle ping/pong for keepalive
             if data == "ping":
                 await websocket.send_json({"type": "pong", "timestamp": None})
             

@@ -33,12 +33,10 @@ def schedule_job(request: ScheduleRequest, db: Session = Depends(get_db)):
     
     Returns explicit plan with node assignments and audit trail.
     """
-    # Get job
     job = JobService.get_job(db, request.job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    # Create requirements
     requirements = SchedulingRequirements(
         cpu_cores_min=request.cpu_cores_min,
         ram_gb_min=request.ram_gb_min,
@@ -52,7 +50,6 @@ def schedule_job(request: ScheduleRequest, db: Session = Depends(get_db)):
         prefer_gpu=request.prefer_gpu
     )
     
-    # Schedule
     scheduler = ResourceScheduler(db)
     plan = scheduler.schedule(job, requirements)
     
@@ -66,12 +63,10 @@ def schedule_and_execute(request: ScheduleRequest, db: Session = Depends(get_db)
     
     Returns allocation plan and created tasks.
     """
-    # Get job
     job = JobService.get_job(db, request.job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    # Create requirements
     requirements = SchedulingRequirements(
         cpu_cores_min=request.cpu_cores_min,
         ram_gb_min=request.ram_gb_min,
@@ -85,7 +80,6 @@ def schedule_and_execute(request: ScheduleRequest, db: Session = Depends(get_db)
         prefer_gpu=request.prefer_gpu
     )
     
-    # Schedule
     scheduler = ResourceScheduler(db)
     plan = scheduler.schedule(job, requirements)
     
@@ -99,7 +93,6 @@ def schedule_and_execute(request: ScheduleRequest, db: Session = Depends(get_db)
             }
         )
     
-    # Execute allocation
     tasks = scheduler.execute_allocation(
         plan,
         job,

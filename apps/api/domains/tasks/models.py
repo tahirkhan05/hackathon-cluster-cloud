@@ -26,14 +26,13 @@ class TaskStatus(str, enum.Enum):
     RETRYING = "retrying"
 
 
-# Valid task state transitions
 TASK_TRANSITIONS = {
     TaskStatus.PENDING: [TaskStatus.ASSIGNED, TaskStatus.FAILED],
     TaskStatus.ASSIGNED: [TaskStatus.RUNNING, TaskStatus.FAILED],
     TaskStatus.RUNNING: [TaskStatus.COMPLETED, TaskStatus.FAILED],
-    TaskStatus.FAILED: [TaskStatus.RETRYING],  # Can retry if attempts remain
-    TaskStatus.RETRYING: [TaskStatus.ASSIGNED, TaskStatus.FAILED],  # Back to assignment or terminal failure
-    TaskStatus.COMPLETED: [],  # Terminal state
+    TaskStatus.FAILED: [TaskStatus.RETRYING],
+    TaskStatus.RETRYING: [TaskStatus.ASSIGNED, TaskStatus.FAILED],
+    TaskStatus.COMPLETED: [],
 }
 
 
@@ -52,31 +51,24 @@ class Task(Base):
     
     status = Column(SQLEnum(TaskStatus), default=TaskStatus.PENDING, index=True)
     
-    # Task sequence number within job
     task_number = Column(Integer, nullable=False)
     
-    # Task parameters (frame_range, input_urls, output_format, etc.)
     parameters = Column(JSON, nullable=False)
     
-    # Retry tracking
     retry_count = Column(Integer, default=0)
     max_retries = Column(Integer, default=3)
     
-    # Timing
     created_at = Column(DateTime, default=datetime.utcnow)
     assigned_at = Column(DateTime, nullable=True)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     
-    # Results
     result_url = Column(String, nullable=True)
     result_metadata = Column(JSON, nullable=True)
     
-    # Error tracking
     error_message = Column(Text, nullable=True)
     last_error_at = Column(DateTime, nullable=True)
     
-    # Relationships
     job = relationship("Job", back_populates="tasks")
     node = relationship("Node", back_populates="tasks")
     incidents = relationship("Incident", back_populates="task")
@@ -95,7 +87,6 @@ class Task(Base):
     
     def can_transition_to(self, new_status: TaskStatus) -> bool:
         """Check if transition to new status is valid."""
-        # Special case: FAILED → RETRYING only if can_retry
         if self.status == TaskStatus.FAILED and new_status == TaskStatus.RETRYING:
             return self.can_retry
         

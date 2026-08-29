@@ -30,7 +30,6 @@ class RecoveryService:
     6. Resolve incident
     """
     
-    # Minimum reliability for recovery nodes
     MIN_RECOVERY_RELIABILITY = 0.7
     
     def __init__(self, db: Session):
@@ -59,7 +58,6 @@ class RecoveryService:
         
         logger.info(f"Starting recovery for incident {incident.incident_id}")
         
-        # Step 1: Get affected tasks
         affected_tasks = self._get_affected_tasks(incident)
         
         if not affected_tasks:
@@ -73,14 +71,12 @@ class RecoveryService:
         
         logger.info(f"Found {len(affected_tasks)} affected tasks")
         
-        # Step 2: Recover each task
         recovery_results = []
         
         for task in affected_tasks:
             result = self._recover_task(task)
             recovery_results.append(result)
         
-        # Step 3: Check if all tasks recovered successfully
         successful = [r for r in recovery_results if r["success"]]
         failed = [r for r in recovery_results if not r["success"]]
         
@@ -88,23 +84,19 @@ class RecoveryService:
             f"Recovery complete: {len(successful)} successful, {len(failed)} failed"
         )
         
-        # Step 4: Update incident
         if len(successful) == len(affected_tasks):
-            # All tasks recovered
             self._resolve_incident(
                 incident,
                 f"All {len(successful)} tasks successfully reassigned and restarted"
             )
             status = "success"
         elif len(successful) > 0:
-            # Partial recovery
             incident.metadata["partial_recovery"] = True
             incident.metadata["tasks_recovered"] = len(successful)
             incident.metadata["tasks_failed_recovery"] = len(failed)
             self.db.commit()
             status = "partial"
         else:
-            # No tasks recovered
             incident.metadata["recovery_failed"] = True
             incident.metadata["failure_reasons"] = [r["error"] for r in failed]
             self.db.commit()
@@ -125,7 +117,6 @@ class RecoveryService:
         if not task_ids:
             return []
         
-        # Get tasks that are still incomplete
         tasks = self.db.query(Task).filter(
             Task.task_id.in_(task_ids),
             Task.status.in_([TaskStatus.ASSIGNED, TaskStatus.RUNNING, TaskStatus.FAILED])
@@ -143,7 +134,6 @@ class RecoveryService:
         logger.info(f"Recovering task {task.task_id} (job: {task.job_id})")
         
         try:
-            # Step 1: Get job requirements
             job = self.db.query(Job).filter(Job.job_id == task.job_id).first()
             
             if not job:
@@ -153,10 +143,8 @@ class RecoveryService:
                     "error": "Job not found"
                 }
             
-            # Step 2: Extract resource requirements
             requirements = self._extract_requirements(job, task)
             
-            # Step 3: Find compatible replacement nodes
             candidate_nodes = self._find_compatible_nodes(task, requirements)
             
             if not candidate_nodes:
@@ -167,10 +155,8 @@ class RecoveryService:
                     "error": "No compatible nodes available"
                 }
             
-            # Step 4: Score and select best node
             selected_node = self._select_best_node(candidate_nodes, requirements)
             
-            # Step 5: Validate selection
             validation_result = self._validate_assignment(
                 task, selected_node, requirements
             )
@@ -186,7 +172,6 @@ class RecoveryService:
                     "error": f"Validation failed: {validation_result['reason']}"
                 }
             
-            # Step 6: Reassign task
             old_node_id = task.node_id
             self._reassign_task(task, selected_node)
             
@@ -215,7 +200,6 @@ class RecoveryService:
         """Extract resource requirements from job and task parameters."""
         params = job.parameters or {}
         
-        # Extract or use defaults
         requirements = {
             "cpu_cores_min": params.get("cpu_cores_min", 2),
             "ram_gb_min": params.get("ram_gb_min", 4.0),
@@ -244,7 +228,6 @@ class RecoveryService:
         - Meets CPU/RAM/GPU requirements
         - Meets reliability threshold
         """
-        # Base query: healthy, available nodes with capacity
         query = self.db.query(Node).filter(
             Node.status.in_([NodeStatus.AVAILABLE, NodeStatus.BUSY]),
             Node.is_healthy == True,
@@ -252,35 +235,29 @@ class RecoveryService:
             Node.reliability_score >= requirements["reliability_min"]
         )
         
-        # Exclude the failed node
         if task.node_id:
             query = query.filter(Node.node_id != task.node_id)
         
         all_nodes = query.all()
         
-        # Filter by hardware compatibility
         compatible_nodes = []
         
         for node in all_nodes:
             caps = node.capabilities
             
-            # Check CPU
             cpu_cores = caps.get("cpu_cores_logical") or caps.get("cpu_cores_physical") or 0
             if cpu_cores < requirements["cpu_cores_min"]:
                 continue
             
-            # Check RAM
             ram_gb = caps.get("ram_total_gb", 0)
             if ram_gb < requirements["ram_gb_min"]:
                 continue
             
-            # Check GPU if required
             if requirements["gpu_required"]:
                 gpu_available = caps.get("gpu_available", False) or caps.get("gpu_count", 0) > 0
                 if not gpu_available:
                     continue
                 
-                # Check VRAM if specified
                 if requirements["gpu_vram_gb_min"]:
                     gpus = caps.get("gpus", [])
                     if gpus:
@@ -290,7 +267,6 @@ class RecoveryService:
                     else:
                         continue
             
-            # Check cost constraint
             if node.cost_per_task_clstr > requirements["max_cost_per_task"]:
                 continue
             
@@ -322,7 +298,6 @@ class RecoveryService:
         if len(nodes) == 1:
             return nodes[0]
         
-        # Calculate scores
         scored_nodes = []
         
         costs = [float(node.cost_per_task_clstr) for node in nodes]
@@ -333,20 +308,16 @@ class RecoveryService:
         max_capacity = max(capacities)
         
         for node in nodes:
-            # Reliability score (0-1)
             reliability_score = node.reliability_score
             
-            # Cost score (inverted: lower cost = higher score)
             if max_cost > min_cost:
                 cost_score = 1.0 - (float(node.cost_per_task_clstr) - min_cost) / (max_cost - min_cost)
             else:
                 cost_score = 1.0
             
-            # Capacity score (higher available capacity = higher score)
             available_capacity = node.max_concurrent_tasks - node.current_task_count
             capacity_score = available_capacity / max_capacity if max_capacity > 0 else 0.0
             
-            # Composite score
             composite_score = (
                 0.40 * reliability_score +
                 0.30 * cost_score +
@@ -355,7 +326,6 @@ class RecoveryService:
             
             scored_nodes.append((node, composite_score))
         
-        # Sort by score (highest first)
         scored_nodes.sort(key=lambda x: x[1], reverse=True)
         
         selected_node = scored_nodes[0][0]
@@ -379,22 +349,18 @@ class RecoveryService:
         
         Double-checks all constraints.
         """
-        # Check node is still available
         if node.status not in [NodeStatus.AVAILABLE, NodeStatus.BUSY]:
             return {"valid": False, "reason": f"Node status is {node.status}"}
         
         if not node.is_healthy:
             return {"valid": False, "reason": "Node is unhealthy"}
         
-        # Check capacity
         if node.current_task_count >= node.max_concurrent_tasks:
             return {"valid": False, "reason": "Node at capacity"}
         
-        # Check reliability
         if node.reliability_score < requirements["reliability_min"]:
             return {"valid": False, "reason": "Reliability below threshold"}
         
-        # Check cost
         if node.cost_per_task_clstr > requirements["max_cost_per_task"]:
             return {"valid": False, "reason": "Cost exceeds budget"}
         
@@ -408,19 +374,15 @@ class RecoveryService:
         """
         old_status = task.status
         
-        # Update task
         task.node_id = new_node.node_id
         task.status = TaskStatus.ASSIGNED
         task.retry_count += 1
         task.assigned_at = datetime.utcnow()
         
-        # Clear execution timestamps for retry
         task.started_at = None
         task.completed_at = None
         task.error_message = None
         
-        # Update node capacity counters
-        # Note: Actual capacity tracking should be updated when task starts
         
         self.db.commit()
         self.db.refresh(task)
@@ -448,7 +410,6 @@ class RecoveryService:
         Returns:
             Summary of recovery operations
         """
-        # Get all open node failure incidents
         incidents = self.db.query(Incident).filter(
             Incident.status == IncidentStatus.OPEN,
             Incident.incident_type == "node_failure"

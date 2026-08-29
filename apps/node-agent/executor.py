@@ -60,7 +60,6 @@ class TaskExecutor:
                     logger.info(f"Received task: {task.get('task_id')}")
                     return task
                 elif response.status_code == 404:
-                    # No tasks available
                     return None
                 else:
                     logger.warning(
@@ -88,18 +87,14 @@ class TaskExecutor:
         try:
             logger.info(f"Starting task {task_id}")
             
-            # Mark task as running
             self._update_task_status(task_id, "RUNNING")
             
-            # Extract parameters
             params = task.get("parameters", {})
             frame_number = params.get("frame_number", params.get("task_index", 0))
             total_frames = params.get("total_frames", 100)
             
-            # Report progress: started
             self._report_progress(task_id, 0, f"Starting frame {frame_number}")
             
-            # Render frame
             result = self.renderer.render_frame(
                 frame_number=frame_number,
                 total_frames=total_frames,
@@ -107,16 +102,12 @@ class TaskExecutor:
                 parameters=params
             )
             
-            # Report progress: rendering complete
             self._report_progress(task_id, 80, "Rendering complete, uploading...")
             
-            # Upload result (for now, just send metadata)
             self._upload_result(task_id, result)
             
-            # Report progress: complete
             self._report_progress(task_id, 100, "Upload complete")
             
-            # Mark task as completed
             self._update_task_status(
                 task_id,
                 "COMPLETED",
@@ -130,7 +121,6 @@ class TaskExecutor:
         except Exception as e:
             logger.error(f"Task {task_id} failed: {e}", exc_info=True)
             
-            # Mark task as failed
             self._update_task_status(
                 task_id,
                 "FAILED",
@@ -201,18 +191,12 @@ class TaskExecutor:
         For MVP, we just send metadata. In production, would upload to S3/storage.
         """
         try:
-            # For now, just log that we would upload
             logger.info(
                 f"Result ready for task {task_id}: "
                 f"{result['filename']} ({result['file_size_bytes']} bytes)"
             )
             
-            # In production, would upload file to storage:
-            # - Upload to S3/GCS/Azure Blob
-            # - Update result with download URL
-            # - Send URL to control plane
             
-            # For MVP, result metadata is sent with completion status
             
         except Exception as e:
             logger.error(f"Error uploading result: {e}")
@@ -236,21 +220,17 @@ class TaskExecutor:
         
         try:
             while True:
-                # Check max iterations
                 if max_iterations and iteration >= max_iterations:
                     logger.info(f"Reached max iterations ({max_iterations})")
                     break
                 
                 iteration += 1
                 
-                # Poll for task
                 task = self.poll_for_task()
                 
                 if task:
-                    # Execute task
                     self.execute_task(task)
                 else:
-                    # No task available, sleep
                     logger.debug("No tasks available, waiting...")
                     time.sleep(poll_interval)
                 

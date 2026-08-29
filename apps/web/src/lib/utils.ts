@@ -44,7 +44,6 @@ export function formatTimestamp(timestamp: string): string {
 
 export function getStatusColor(status: string): string {
   const statusMap: Record<string, string> = {
-    // Job statuses
     SUBMITTED: 'bg-blue-100 text-blue-700',
     ANALYZING: 'bg-purple-100 text-purple-700',
     SCHEDULING: 'bg-yellow-100 text-yellow-700',
@@ -55,17 +54,14 @@ export function getStatusColor(status: string): string {
     CANCELLED: 'bg-gray-100 text-gray-500',
     RECOVERING: 'bg-orange-100 text-orange-700',
     
-    // Task statuses
     PENDING: 'bg-gray-100 text-gray-600',
     ASSIGNED: 'bg-blue-100 text-blue-600',
     RETRYING: 'bg-orange-100 text-orange-600',
     
-    // Node statuses
     HEALTHY: 'bg-green-100 text-green-700',
     UNHEALTHY: 'bg-red-100 text-red-700',
     OFFLINE: 'bg-gray-100 text-gray-500',
     
-    // Incident statuses
     DETECTED: 'bg-red-100 text-red-700',
     RECOVERING: 'bg-yellow-100 text-yellow-700',
     RESOLVED: 'bg-green-100 text-green-700',

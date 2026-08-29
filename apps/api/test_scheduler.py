@@ -12,7 +12,6 @@ from domains.nodes.models import Node, NodeStatus
 from domains.jobs.models import Job, JobStatus
 from domains.scheduling.scheduler import ResourceScheduler, SchedulingRequirements
 
-# Test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_scheduler.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -30,7 +29,6 @@ def get_test_db():
 def setup_database():
     Base.metadata.create_all(bind=engine)
     
-    # Seed workload type
     from domains.workloads.seed import seed_workload_types
     db = next(get_test_db())
     seed_workload_types(db)
@@ -86,23 +84,17 @@ def create_test_job(db, customer_id: str = "test-customer", budget: float = 1000
     return job
 
 
-# ============================================================================
-# BASIC SCHEDULING TESTS
-# ============================================================================
 
 def test_sufficient_resources():
     """Test scheduling with sufficient compatible nodes."""
     db = next(get_test_db())
     
-    # Create nodes
     create_test_node(db, "node-1", cpu_cores=8, ram_gb=16, cost=10, reliability=0.95)
     create_test_node(db, "node-2", cpu_cores=8, ram_gb=16, cost=10, reliability=0.90)
     create_test_node(db, "node-3", cpu_cores=8, ram_gb=16, cost=10, reliability=0.85)
     
-    # Create job
     job = create_test_job(db, budget=5000)
     
-    # Schedule
     requirements = SchedulingRequirements(
         cpu_cores_min=4,
         ram_gb_min=8,
@@ -119,7 +111,6 @@ def test_sufficient_resources():
     assert plan.total_tasks == 100
     assert len(plan.warnings) == 0
     
-    # Verify task distribution
     total_distributed = sum(len(tasks) for tasks in plan.task_distribution.values())
     assert total_distributed == 100
 
@@ -128,16 +119,14 @@ def test_insufficient_resources():
     """Test scheduling when no nodes meet requirements."""
     db = next(override_get_db())
     
-    # Create nodes with insufficient specs
     create_test_node(db, "node-1", cpu_cores=2, ram_gb=4)  # Too small
     create_test_node(db, "node-2", cpu_cores=2, ram_gb=4)  # Too small
     
     job = create_test_job(db)
     
-    # Require more than any node has
     requirements = SchedulingRequirements(
-        cpu_cores_min=16,  # More than available
-        ram_gb_min=32,     # More than available
+        cpu_cores_min=16,
+        ram_gb_min=32,
         task_count=100,
         budget_clstr=5000
     )
@@ -155,17 +144,15 @@ def test_incompatible_gpu():
     """Test scheduling fails when GPU required but none available."""
     db = next(override_get_db())
     
-    # Create nodes without GPUs
     create_test_node(db, "node-1", cpu_cores=8, ram_gb=16, gpu=False)
     create_test_node(db, "node-2", cpu_cores=8, ram_gb=16, gpu=False)
     
     job = create_test_job(db)
     
-    # Require GPU
     requirements = SchedulingRequirements(
         cpu_cores_min=4,
         ram_gb_min=8,
-        gpu_required=True,  # Required but not available
+        gpu_required=True,
         task_count=100,
         budget_clstr=5000
     )
@@ -182,7 +169,6 @@ def test_unreliable_node_filtered():
     """Test nodes below reliability threshold are filtered."""
     db = next(override_get_db())
     
-    # Create nodes with varying reliability
     create_test_node(db, "node-1", cpu_cores=8, ram_gb=16, reliability=0.95)  # Good
     create_test_node(db, "node-2", cpu_cores=8, ram_gb=16, reliability=0.50)  # Unreliable
     create_test_node(db, "node-3", cpu_cores=8, ram_gb=16, reliability=0.60)  # Unreliable
@@ -194,14 +180,14 @@ def test_unreliable_node_filtered():
         ram_gb_min=8,
         task_count=100,
         budget_clstr=5000,
-        reliability_min=0.80  # Filters out node-2 and node-3
+        reliability_min=0.80
     )
     
     scheduler = ResourceScheduler(db)
     plan = scheduler.schedule(job, requirements)
     
     assert plan.is_feasible
-    assert len(plan.allocated_nodes) == 1  # Only node-1
+    assert len(plan.allocated_nodes) == 1
     assert "low_reliability" in plan.filtered_reasons
     assert plan.filtered_reasons["low_reliability"] == 2
 
@@ -210,16 +196,15 @@ def test_budget_exceeded():
     """Test scheduling warns when estimated cost exceeds budget."""
     db = next(override_get_db())
     
-    # Create expensive nodes
     create_test_node(db, "node-1", cpu_cores=8, ram_gb=16, cost=100)  # Very expensive
     
-    job = create_test_job(db, budget=500)  # Low budget
+    job = create_test_job(db, budget=500)
     
     requirements = SchedulingRequirements(
         cpu_cores_min=4,
         ram_gb_min=8,
-        task_count=100,  # 100 tasks * 100 cost = 10,000
-        budget_clstr=500,  # But budget is only 500
+        task_count=100,
+        budget_clstr=500,
         estimated_task_duration_seconds=60
     )
     
@@ -235,7 +220,6 @@ def test_deadline_infeasible():
     """Test scheduling warns when estimated duration exceeds deadline."""
     db = next(override_get_db())
     
-    # Create one node
     create_test_node(db, "node-1", cpu_cores=8, ram_gb=16)
     
     job = create_test_job(db)
@@ -244,8 +228,8 @@ def test_deadline_infeasible():
         cpu_cores_min=4,
         ram_gb_min=8,
         task_count=100,
-        estimated_task_duration_seconds=60,  # 60s per task
-        deadline_seconds=1000,  # But 100 tasks * 60s = 6000s needed
+        estimated_task_duration_seconds=60,
+        deadline_seconds=1000,
         budget_clstr=5000
     )
     
@@ -261,12 +245,11 @@ def test_partial_capacity():
     """Test scheduling with nodes at partial capacity."""
     db = next(override_get_db())
     
-    # Create nodes with some capacity used
     node1 = create_test_node(db, "node-1", cpu_cores=8, ram_gb=16)
-    node1.current_task_count = 2  # 2 of 4 slots used
+    node1.current_task_count = 2
     
     node2 = create_test_node(db, "node-2", cpu_cores=8, ram_gb=16)
-    node2.current_task_count = 0  # All slots free
+    node2.current_task_count = 0
     
     db.commit()
     
@@ -283,15 +266,12 @@ def test_partial_capacity():
     plan = scheduler.schedule(job, requirements)
     
     assert plan.is_feasible
-    # node2 should rank higher due to higher available capacity
-    # In scoring, capacity is weighted at 30%
 
 
 def test_deterministic_output():
     """Test scheduler produces deterministic results."""
     db = next(override_get_db())
     
-    # Create identical scenario twice
     create_test_node(db, "node-1", cpu_cores=8, ram_gb=16, cost=10, reliability=0.95)
     create_test_node(db, "node-2", cpu_cores=8, ram_gb=16, cost=12, reliability=0.90)
     create_test_node(db, "node-3", cpu_cores=8, ram_gb=16, cost=15, reliability=0.85)
@@ -306,14 +286,12 @@ def test_deterministic_output():
         reliability_min=0.8
     )
     
-    # Schedule twice
     scheduler1 = ResourceScheduler(db)
     plan1 = scheduler1.schedule(job, requirements)
     
     scheduler2 = ResourceScheduler(db)
     plan2 = scheduler2.schedule(job, requirements)
     
-    # Results should be identical
     assert plan1.allocated_nodes == plan2.allocated_nodes
     assert plan1.task_distribution == plan2.task_distribution
     assert plan1.estimated_cost_clstr == plan2.estimated_cost_clstr
@@ -325,7 +303,7 @@ def test_offline_node_filtered():
     db = next(override_get_db())
     
     node1 = create_test_node(db, "node-1", cpu_cores=8, ram_gb=16)
-    node1.status = NodeStatus.OFFLINE  # Offline
+    node1.status = NodeStatus.OFFLINE
     
     node2 = create_test_node(db, "node-2", cpu_cores=8, ram_gb=16)
     node2.status = NodeStatus.AVAILABLE
@@ -345,7 +323,7 @@ def test_offline_node_filtered():
     plan = scheduler.schedule(job, requirements)
     
     assert plan.is_feasible
-    assert len(plan.allocated_nodes) == 1  # Only node-2
+    assert len(plan.allocated_nodes) == 1
     assert "offline" in plan.filtered_reasons
 
 
@@ -354,7 +332,7 @@ def test_at_capacity_node_filtered():
     db = next(override_get_db())
     
     node1 = create_test_node(db, "node-1", cpu_cores=8, ram_gb=16)
-    node1.current_task_count = 4  # At max capacity
+    node1.current_task_count = 4
     node1.max_concurrent_tasks = 4
     
     node2 = create_test_node(db, "node-2", cpu_cores=8, ram_gb=16)
@@ -383,11 +361,9 @@ def test_scoring_weights_reliability():
     """Test reliability is weighted heavily in scoring."""
     db = next(override_get_db())
     
-    # Node with high reliability but high cost
     create_test_node(db, "node-reliable", cpu_cores=8, ram_gb=16, 
                      cost=20, reliability=0.99)
     
-    # Node with low cost but low reliability
     create_test_node(db, "node-cheap", cpu_cores=8, ram_gb=16, 
                      cost=5, reliability=0.80)
     
@@ -404,8 +380,6 @@ def test_scoring_weights_reliability():
     scheduler = ResourceScheduler(db)
     plan = scheduler.schedule(job, requirements)
     
-    # With 40% reliability weight, high-reliability node should rank first
-    # Check that it got allocated tasks
     assert plan.is_feasible
     assert len(plan.allocated_nodes) >= 1
 
@@ -423,14 +397,13 @@ def test_round_robin_distribution():
     requirements = SchedulingRequirements(
         cpu_cores_min=4,
         ram_gb_min=8,
-        task_count=9,  # Divisible by 3
+        task_count=9,
         budget_clstr=5000
     )
     
     scheduler = ResourceScheduler(db)
     plan = scheduler.schedule(job, requirements)
     
-    # Each node should get 3 tasks (9 / 3)
     for node_id, tasks in plan.task_distribution.items():
         assert len(tasks) == 3
 
@@ -454,7 +427,6 @@ def test_audit_trail():
     scheduler = ResourceScheduler(db)
     plan = scheduler.schedule(job, requirements)
     
-    # Check audit fields
     assert plan.candidate_nodes_count == 2
     assert len(plan.filtered_reasons) > 0
     assert len(plan.node_scores) > 0

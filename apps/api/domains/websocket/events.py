@@ -11,32 +11,26 @@ from enum import Enum
 
 class EventType(str, Enum):
     """Real-time event types."""
-    # Node events
     NODE_JOINED = "node_joined"
     NODE_HEARTBEAT = "node_heartbeat"
     NODE_SELECTED = "node_selected"
     NODE_FAILED = "node_failed"
     
-    # Job events
     JOB_STARTED = "job_started"
     JOB_COMPLETED = "job_completed"
     JOB_FAILED = "job_failed"
     
-    # Task events
     TASK_ASSIGNED = "task_assigned"
     TASK_STARTED = "task_started"
     TASK_COMPLETED = "task_completed"
     TASK_FAILED = "task_failed"
     
-    # Recovery events
     RECOVERY_STARTED = "recovery_started"
     REPLACEMENT_SELECTED = "replacement_selected"
     RECOVERY_COMPLETED = "recovery_completed"
     
-    # Economic events
     LEDGER_TRANSACTION = "ledger_transaction"
     
-    # System events
     SYSTEM_STATUS = "system_status"
     CONNECTION_ESTABLISHED = "connection_established"
 
@@ -59,7 +53,6 @@ class BaseEvent(BaseModel):
         )
 
 
-# Event creators for specific event types
 class EventFactory:
     """Factory for creating typed events."""
     

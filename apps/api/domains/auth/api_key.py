@@ -20,7 +20,6 @@ from fastapi import Security, HTTPException, status
 from fastapi.security import APIKeyHeader
 from config import settings
 
-# API Key header scheme
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
@@ -52,10 +51,9 @@ def verify_api_key(api_key: str) -> bool:
     if not api_key:
         return False
     
-    # MVP: Single master key for all nodes
     master_key = settings.NODE_API_KEY
     if not master_key:
-        return True  # If no key configured, allow (development only)
+        return True
     
     return secrets.compare_digest(api_key, master_key)
 

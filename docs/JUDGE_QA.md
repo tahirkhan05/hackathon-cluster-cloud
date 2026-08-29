@@ -11,12 +11,13 @@
 ### Q: How does the AI work in your system?
 
 **Answer:**
-> "We use AWS Bedrock with Claude Sonnet 3.5 for two purposes: workload analysis and recovery decisions. When a customer submits requirements, the AI estimates compute time, parallelism, and resource needs. When a node fails, the AI recommends replacement nodes. However—and this is critical—all AI recommendations are validated by a deterministic scheduler. The AI suggests, the scheduler verifies constraints like compatibility, budget, and capacity. This hybrid approach gives us AI intelligence with deterministic guarantees."
+> "The system has AI capabilities when AWS Bedrock credentials are configured, but it's optional. With Bedrock, Claude Sonnet 3.5 provides workload analysis and recovery recommendations. When a customer submits requirements, the AI estimates compute time, parallelism, and resource needs. When a node fails, the AI recommends replacement nodes. However—and this is critical—all AI recommendations are validated by a deterministic scheduler. The AI suggests, the scheduler verifies constraints like compatibility, budget, and capacity. If Bedrock isn't available, the system automatically falls back to deterministic algorithms. This hybrid approach gives us AI intelligence when available with deterministic guarantees always."
 
 **Follow-up Details:**
 - Prompts include: workload type, requirements, hardware specs
-- Fallback logic if AI unavailable (default estimates)
-- No model training (using pre-trained Claude)
+- Graceful fallback if AWS unavailable (deterministic algorithms)
+- No model training (using pre-trained Claude when available)
+- System fully functional without AWS credentials
 - Future: Fine-tune on rendering workload data
 
 ---
@@ -63,7 +64,7 @@
 ### Q: Is this production-ready?
 
 **Answer:**
-> "It's production-ready for an MVP or beta launch with known constraints. What works: distributed execution, automatic recovery, economic settlement, real-time monitoring. What needs hardening: authentication is optional, we're using SQLite instead of PostgreSQL, no TLS encryption, and security controls are basic Docker isolation. For a production launch, we'd need about two weeks to add: node authentication with API keys or certificates, PostgreSQL with replication, TLS/HTTPS, comprehensive monitoring, and security hardening. The core architecture is sound—it's operational hardening that's needed."
+> "It's production-ready for an MVP or beta launch with known constraints. What works: distributed execution, automatic recovery, economic settlement, real-time monitoring. What needs hardening: authentication is optional, we're using SQLite instead of PostgreSQL, no TLS encryption, and security controls are basic process isolation. For a production launch, we'd need about two weeks to add: node authentication with API keys or certificates, PostgreSQL with replication, TLS/HTTPS, comprehensive monitoring, and security hardening. The core architecture is sound—it's operational hardening that's needed."
 
 **Follow-up Details:**
 - Current: works great for controlled environments
@@ -89,13 +90,13 @@
 ### Q: How do you prevent malicious nodes?
 
 **Answer:**
-> "Multiple layers. First, workload isolation: every task runs in a Docker container with network disabled, resource limits, read-only filesystem, and non-root user. Nodes can't access the internet or each other. Second, verification: we compare task outputs against expected results—if a node consistently produces bad outputs, its reliability score drops and it stops getting work. Third, economic stake: providers post collateral that's slashed for failures. Fourth—not yet implemented but planned—secure enclaves or TEEs for sensitive workloads. For this MVP, the threat model assumes nodes might fail but aren't actively malicious. Full Byzantine fault tolerance is post-MVP."
+> "Multiple layers. First, workload isolation: tasks run in isolated processes with resource limits, restricted filesystem access, and non-root execution. Nodes can't access each other's data. Second, verification: we compare task outputs against expected results—if a node consistently produces bad outputs, its reliability score drops and it stops getting work. Third, economic stake: providers post collateral that's slashed for failures. Fourth—not yet implemented but planned—Docker containers or secure enclaves for additional isolation. For this MVP, the threat model assumes nodes might fail but aren't actively malicious. Full Byzantine fault tolerance is post-MVP."
 
 **Follow-up Details:**
-- Docker isolation: --network=none, CPU/memory limits
+- Process isolation: resource limits, restricted filesystem
 - Output verification: hash checking, result validation
 - Economic incentive: lose stake if you cheat
-- Future: SGX enclaves, zero-knowledge proofs
+- Future: Docker containers, SGX enclaves, zero-knowledge proofs
 
 ---
 
@@ -362,7 +363,7 @@
 ### Q: This seems too complex for a hackathon. Did you really build it all?
 
 **Answer:**
-> "Fair skepticism. Yes, I built it all—you're welcome to review the Git history. The key was scoping: I cut features ruthlessly. No blockchain, no microservices, no production security, no real Blender—just the core MVP. The architecture is simpler than it looks: FastAPI backend, SQLite database, Next.js frontend, Python agents. I reused libraries for the hard parts—AWS Bedrock for AI, SQLAlchemy for database, Docker for isolation. And I focused on the demo: everything you see works for the demo, but there's lots of polish missing for production. It's a real working system, but it's an MVP."
+> "Fair skepticism. Yes, I built it all—you're welcome to review the Git history. The key was scoping: I cut features ruthlessly. No blockchain, no microservices, no production security, no real Blender—just the core MVP. The architecture is simpler than it looks: FastAPI backend, SQLite database, Next.js frontend, Python agents. I reused libraries where possible—SQLAlchemy for database, optional AWS Bedrock for AI (with deterministic fallback), standard Python libraries. And I focused on the demo: everything you see works for the demo, but there's lots of polish missing for production. It's a real working system, but it's an MVP."
 
 **Follow-up Details:**
 - Git history: all commits visible

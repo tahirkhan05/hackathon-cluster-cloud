@@ -38,7 +38,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     """Application lifespan manager."""
     logger.info("[STARTUP] Initializing ClusterCloud API...")
     
-    # Initialize database
     try:
         Base.metadata.create_all(bind=engine)
         init_database()

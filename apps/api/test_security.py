@@ -19,18 +19,15 @@ from domains.auth.api_key import generate_api_key, hash_api_key, verify_api_key
 client = TestClient(app)
 
 
-# ============================================================================
-# API KEY AUTHENTICATION TESTS
-# ============================================================================
 
 def test_generate_api_key():
     """Test API key generation produces unique keys."""
     key1 = generate_api_key()
     key2 = generate_api_key()
     
-    assert len(key1) == 64  # 32 bytes = 64 hex chars
+    assert len(key1) == 64
     assert len(key2) == 64
-    assert key1 != key2  # Must be unique
+    assert key1 != key2
 
 
 def test_hash_api_key():
@@ -40,14 +37,13 @@ def test_hash_api_key():
     hash1 = hash_api_key(key)
     hash2 = hash_api_key(key)
     
-    assert hash1 == hash2  # Same input = same hash
-    assert hash1 != key  # Hash is different from input
+    assert hash1 == hash2
+    assert hash1 != key
 
 
 def test_verify_api_key_with_auth_disabled():
     """Test API key verification when auth is disabled."""
     with patch('domains.auth.api_key.settings.NODE_API_KEY', None):
-        # When no key configured, should allow (dev mode)
         assert verify_api_key("any-key") == True
         assert verify_api_key("") == False  # Empty still fails
 
@@ -67,10 +63,8 @@ def test_api_key_timing_attack_resistant():
     test_key = "valid-test-key"
     
     with patch('domains.auth.api_key.settings.NODE_API_KEY', test_key):
-        # secrets.compare_digest should be used (constant-time)
         import time
         
-        # These should take similar time
         start1 = time.time()
         verify_api_key("wrong-key-1")
         time1 = time.time() - start1
@@ -79,14 +73,9 @@ def test_api_key_timing_attack_resistant():
         verify_api_key("valid-test-key")
         time2 = time.time() - start2
         
-        # Timing should be similar (within order of magnitude)
-        # This is a weak test but better than nothing
         assert abs(time1 - time2) < 0.01
 
 
-# ============================================================================
-# NODE REGISTRATION SECURITY TESTS
-# ============================================================================
 
 def test_node_registration_without_auth():
     """Test node registration without API key (auth disabled)."""
@@ -104,7 +93,7 @@ def test_node_registration_without_auth():
             }
         )
         
-        assert response.status_code in [200, 500]  # May fail on DB, but auth not checked
+        assert response.status_code in [200, 500]
 
 
 def test_node_registration_with_invalid_api_key():
@@ -148,13 +137,9 @@ def test_node_registration_missing_api_key():
             assert response.status_code == 401
 
 
-# ============================================================================
-# INPUT VALIDATION TESTS
-# ============================================================================
 
 def test_sql_injection_protection():
     """Test that SQL injection attempts are handled safely."""
-    # Attempt SQL injection in node name
     response = client.post(
         "/api/nodes/register",
         json={
@@ -168,8 +153,6 @@ def test_sql_injection_protection():
         }
     )
     
-    # Should either succeed (sanitized) or fail validation
-    # Should NOT cause database error
     assert response.status_code in [200, 422, 500]
 
 
@@ -188,13 +171,11 @@ def test_xss_protection():
         }
     )
     
-    # Should handle without executing script
     assert response.status_code in [200, 422, 500]
 
 
 def test_oversized_input_rejection():
     """Test that oversized inputs are rejected."""
-    # Very long provider ID
     response = client.post(
         "/api/nodes/register",
         json={
@@ -208,13 +189,9 @@ def test_oversized_input_rejection():
         }
     )
     
-    # Should reject or truncate
     assert response.status_code in [422, 500]
 
 
-# ============================================================================
-# RESOURCE LIMIT TESTS
-# ============================================================================
 
 def test_resource_limits_configured():
     """Test that resource limits are properly configured."""
@@ -233,16 +210,11 @@ def test_docker_isolation_enabled():
     assert settings.ENABLE_DOCKER_ISOLATION == True
 
 
-# ============================================================================
-# SECRETS HANDLING TESTS
-# ============================================================================
 
 def test_no_secrets_in_error_messages():
     """Test that error messages don't leak secrets."""
-    # This is a basic test - real testing requires code review
     from config import settings
     
-    # Attempt to trigger error with auth
     with patch('config.settings.ENABLE_NODE_AUTH', True):
         with patch('config.settings.NODE_API_KEY', 'super-secret-key'):
             response = client.post(
@@ -259,37 +231,25 @@ def test_no_secrets_in_error_messages():
                 }
             )
             
-            # Error message should not contain actual key
             assert 'super-secret-key' not in response.text
 
 
-# ============================================================================
-# RATE LIMITING TESTS (Not implemented in MVP)
-# ============================================================================
 
 @pytest.mark.skip(reason="Rate limiting not implemented in MVP")
 def test_rate_limiting():
     """Test rate limiting on endpoints."""
-    # Make many requests rapidly
     for _ in range(100):
         response = client.get("/api/nodes")
     
-    # Should eventually get rate limited
-    # assert response.status_code == 429
 
 
-# ============================================================================
-# AUDIT LOGGING TESTS
-# ============================================================================
 
 def test_authentication_attempts_logged():
     """Test that authentication attempts are logged."""
-    # This requires checking logs - simplified test
     import logging
     
     with patch('config.settings.ENABLE_NODE_AUTH', True):
         with patch('config.settings.NODE_API_KEY', 'valid-key'):
-            # Make failed auth attempt
             response = client.post(
                 "/api/nodes/register",
                 headers={"X-API-Key": "invalid"},
@@ -304,8 +264,6 @@ def test_authentication_attempts_logged():
                 }
             )
             
-            # In production, verify log entry was created
-            # For MVP, just ensure it doesn't crash
             assert response.status_code == 401
 
 

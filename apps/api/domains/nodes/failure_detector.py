@@ -32,10 +32,8 @@ class FailureDetector:
     - Create failure incident (idempotent)
     """
     
-    # Heartbeat timeout threshold (seconds)
     HEARTBEAT_TIMEOUT_SECONDS = 30
     
-    # Minimum time before considering recovered (prevents flapping)
     RECOVERY_GRACE_PERIOD_SECONDS = 10
     
     def __init__(self, db: Session):
@@ -51,8 +49,6 @@ class FailureDetector:
         now = datetime.utcnow()
         timeout_threshold = now - timedelta(seconds=self.HEARTBEAT_TIMEOUT_SECONDS)
         
-        # Find nodes that haven't sent heartbeat within threshold
-        # and are currently marked as available or busy
         failed_nodes = self.db.query(Node).filter(
             Node.last_heartbeat_at < timeout_threshold,
             Node.status.in_([NodeStatus.AVAILABLE, NodeStatus.BUSY])
@@ -66,7 +62,6 @@ class FailureDetector:
                 f"(last heartbeat: {node.last_heartbeat_at}, threshold: {timeout_threshold})"
             )
             
-            # Get incomplete tasks
             incomplete_tasks = self._get_incomplete_tasks(node.node_id)
             
             results.append((node, incomplete_tasks))
@@ -87,7 +82,6 @@ class FailureDetector:
         Returns:
             Incident record
         """
-        # Check if we already have an active incident for this node
         existing_incident = self.db.query(Incident).filter(
             Incident.node_id == node.node_id,
             Incident.status == IncidentStatus.OPEN,
@@ -98,13 +92,11 @@ class FailureDetector:
             logger.info(f"Incident already exists for node {node.node_id}: {existing_incident.incident_id}")
             return existing_incident
         
-        # Mark node as failed
         old_status = node.status
         node.status = NodeStatus.OFFLINE
         node.is_healthy = False
         node.failure_count += 1
         
-        # Create incident
         incident = Incident(
             incident_type=IncidentType.HEARTBEAT_TIMEOUT,
             description=f"Node {node.node_id} ({node.provider_id}) failed: {reason}",
@@ -145,7 +137,6 @@ class FailureDetector:
         now = datetime.utcnow()
         recovery_threshold = now - timedelta(seconds=self.RECOVERY_GRACE_PERIOD_SECONDS)
         
-        # Find offline nodes with recent heartbeat
         recovered_nodes = self.db.query(Node).filter(
             Node.status == NodeStatus.OFFLINE,
             Node.last_heartbeat_at >= recovery_threshold
@@ -163,14 +154,12 @@ class FailureDetector:
         Returns:
             Closed incident, or None if no incident found
         """
-        # Find open incident for this node
         incident = self.db.query(Incident).filter(
             Incident.node_id == node.node_id,
             Incident.status == IncidentStatus.OPEN,
             Incident.incident_type == "node_failure"
         ).first()
         
-        # Mark node as available
         old_status = node.status
         node.status = NodeStatus.AVAILABLE
         node.is_healthy = True
@@ -230,7 +219,6 @@ class FailureDetector:
         
         Idempotent: Returns existing incident if found.
         """
-        # Check for existing incident
         existing = self.db.query(Incident).filter(
             Incident.task_id == task.task_id,
             Incident.status == IncidentStatus.OPEN,
@@ -240,7 +228,6 @@ class FailureDetector:
         if existing:
             return existing
         
-        # Calculate how long task has been running
         running_duration = (datetime.utcnow() - task.started_at).total_seconds() if task.started_at else 0
         
         incident = Incident(
@@ -277,7 +264,6 @@ class FailureDetector:
         """
         logger.info("Running failure detection cycle")
         
-        # Detect failed nodes
         failed_nodes = self.detect_failed_nodes()
         
         incidents_created = []
@@ -285,7 +271,6 @@ class FailureDetector:
             incident = self.mark_node_failed(node, incomplete_tasks)
             incidents_created.append(incident)
         
-        # Detect recovered nodes
         recovered_nodes = self.detect_recovered_nodes()
         
         incidents_resolved = []
@@ -294,7 +279,6 @@ class FailureDetector:
             if incident:
                 incidents_resolved.append(incident)
         
-        # Detect stale tasks
         stale_tasks = self.check_for_stale_tasks()
         
         stale_incidents = []

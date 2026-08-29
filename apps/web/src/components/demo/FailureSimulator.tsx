@@ -35,7 +35,6 @@ export function FailureSimulator({ nodeId, onFailureTriggered, disabled }: Props
     setSuccess(false);
 
     try {
-      // Call demo endpoint to simulate failure
       await fetch(`/api/demo/simulate-failure/${nodeId}`, {
         method: 'POST',
       });

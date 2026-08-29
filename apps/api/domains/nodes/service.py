@@ -40,7 +40,6 @@ class NodeService:
         if existing:
             logger.info(f"Reactivating existing node: {existing.node_id}")
             
-            # Update existing node
             existing.status = NodeStatus.AVAILABLE
             existing.last_heartbeat = datetime.utcnow()
             existing.last_seen_at = datetime.utcnow()
@@ -58,7 +57,6 @@ class NodeService:
             logger.info(f"Node reactivated: {existing.node_id}")
             return existing
         
-        # Create new node
         node = Node(
             provider_id=node_data.provider_id,
             hostname=node_data.hostname,
@@ -72,7 +70,6 @@ class NodeService:
         db.add(node)
         db.flush()
         
-        # Create reliability score
         reliability = ReliabilityScore(node_id=node.node_id)
         db.add(reliability)
         
@@ -98,13 +95,11 @@ class NodeService:
         if not node:
             raise ValueError(f"Node not found: {node_id}")
         
-        # Update heartbeat timestamp
         node.last_heartbeat = datetime.utcnow()
         node.last_seen_at = datetime.utcnow()
         node.current_task_count = heartbeat.current_task_count
         node.is_healthy = heartbeat.is_healthy
         
-        # Update status based on health and capacity
         old_status = node.status
         
         if not heartbeat.is_healthy:

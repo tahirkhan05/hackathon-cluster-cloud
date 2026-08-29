@@ -34,27 +34,21 @@ class Transaction(Base):
     
     transaction_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     
-    # Transaction metadata
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
     transaction_type = Column(SQLEnum(TransactionType), nullable=False, index=True)
     
-    # Accounts
     from_account = Column(String, nullable=False, index=True)
     to_account = Column(String, nullable=False, index=True)
     
-    # Amount
     amount_clstr = Column(Numeric(10, 2), nullable=False)
     
-    # Related entities for audit trail
     related_job_id = Column(String, nullable=True, index=True)
     related_task_id = Column(String, nullable=True)
     related_incident_id = Column(String, nullable=True)
     related_node_id = Column(String, nullable=True)
     
-    # Description for transparency
     description = Column(Text, nullable=True)
     
-    # Balance tracking (optional, for quick queries)
     from_account_balance_after = Column(Numeric(10, 2), nullable=True)
     to_account_balance_after = Column(Numeric(10, 2), nullable=True)
     

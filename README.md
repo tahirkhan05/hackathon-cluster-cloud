@@ -31,11 +31,11 @@ This hackathon MVP demonstrates distributed 3D rendering with:
 - Economic penalties and rewards
 
 ✅ **AI Orchestration:**
-- AWS Bedrock integration (Claude Sonnet 3.5)
+- AWS Bedrock integration (optional - graceful fallback to deterministic mode)
 - Workload analysis and resource planning
 - Recovery decision recommendations
-- Fallback logic when AI unavailable
-- All recommendations validated deterministically
+- All AI recommendations validated deterministically
+- System fully functional without AWS credentials
 
 ✅ **Economic System:**
 - CLSTR internal token ledger
@@ -86,7 +86,7 @@ This hackathon MVP demonstrates distributed 3D rendering with:
 ### Distributed Workers
 - **Node Agent**: Python daemon running on provider machines
 - Registers with control plane
-- Executes rendering tasks in isolated Docker containers
+- Executes rendering tasks with resource isolation
 - Sends heartbeat signals
 - Reports task progress and results
 
@@ -100,8 +100,10 @@ This hackathon MVP demonstrates distributed 3D rendering with:
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- Docker (optional, for workload isolation)
-- AWS credentials with Bedrock access (optional, for AI features)
+
+**Optional (Not Required for Demo):**
+- Docker (for production workload isolation - not used in MVP)
+- AWS Bedrock credentials (for AI-powered recommendations - deterministic fallback works without it)
 
 ### Setup
 

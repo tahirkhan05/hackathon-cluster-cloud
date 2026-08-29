@@ -17,38 +17,30 @@ class ReliabilityScore(Base):
     
     node_id = Column(String, ForeignKey("nodes.node_id"), primary_key=True)
     
-    # Core metrics
-    reliability_score = Column(Float, default=1.0)  # 0.0 to 1.0
+    reliability_score = Column(Float, default=1.0)
     
-    # Task statistics
     tasks_completed = Column(Integer, default=0)
     tasks_failed = Column(Integer, default=0)
     tasks_reassigned = Column(Integer, default=0)
     recovery_assists = Column(Integer, default=0)
     
-    # Incident statistics
     total_incidents = Column(Integer, default=0)
     heartbeat_timeouts = Column(Integer, default=0)
     task_timeouts = Column(Integer, default=0)
     crashes = Column(Integer, default=0)
     
-    # Performance metrics
     average_task_duration_seconds = Column(Float, nullable=True)
     fastest_task_duration_seconds = Column(Float, nullable=True)
     slowest_task_duration_seconds = Column(Float, nullable=True)
     
-    # Uptime tracking
     total_uptime_seconds = Column(Integer, default=0)
     total_downtime_seconds = Column(Integer, default=0)
     
-    # Historical trend (JSON array of daily scores)
     score_history = Column(JSON, nullable=True)
     
-    # Last updated
     last_calculated_at = Column(DateTime, default=datetime.utcnow)
     last_incident_at = Column(DateTime, nullable=True)
     
-    # Relationships
     node = relationship("Node", back_populates="reliability")
     
     @property

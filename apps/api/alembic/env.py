@@ -12,13 +12,11 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# Add parent directory to path for imports
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from config import settings
 from database import Base
 
-# Import all models to ensure they're registered with Base
 from domains.jobs.models import Job
 from domains.tasks.models import Task
 from domains.nodes.models import Node
@@ -28,17 +26,13 @@ from domains.ledger.models import Transaction
 from domains.workloads.models import WorkloadType
 
 
-# Alembic Config object
 config = context.config
 
-# Set database URL from our settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
-# Interpret the config file for Python logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Model metadata
 target_metadata = Base.metadata
 
 

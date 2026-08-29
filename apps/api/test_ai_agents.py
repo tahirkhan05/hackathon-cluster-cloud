@@ -13,7 +13,6 @@ from domains.ai.workload_agent import WorkloadAnalysisAgent
 from domains.ai.provider_agent import ProviderRecommendationAgent
 from domains.ai.recovery_agent import RecoveryAgent
 
-# Test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_ai_agents.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -34,9 +33,6 @@ def setup_database():
     Base.metadata.drop_all(bind=engine)
 
 
-# ============================================================================
-# WORKLOAD AGENT TESTS
-# ============================================================================
 
 def test_workload_agent_deterministic_fallback():
     """Test workload agent fallback without AI."""
@@ -44,7 +40,6 @@ def test_workload_agent_deterministic_fallback():
     
     agent = WorkloadAnalysisAgent(db)
     
-    # Simulate context
     context = agent.gather_context(
         workload_type="frame_rendering",
         parameters={
@@ -56,17 +51,14 @@ def test_workload_agent_deterministic_fallback():
         customer_budget=5000
     )
     
-    # Get fallback recommendation
     recommendation = agent.deterministic_fallback(context)
     
-    # Verify structure
     assert "cpu_cores_min" in recommendation
     assert "ram_gb_min" in recommendation
     assert "gpu_required" in recommendation
     assert "estimated_task_duration_seconds" in recommendation
     assert recommendation["fallback"] == True
     
-    # Verify reasonable values
     assert recommendation["cpu_cores_min"] >= 2
     assert recommendation["ram_gb_min"] >= 4
     assert recommendation["suggested_task_count"] == 100
@@ -112,7 +104,6 @@ def test_workload_agent_validation_missing_fields():
     
     incomplete_recommendation = {
         "cpu_cores_min": 4
-        # Missing other required fields
     }
     
     is_valid, result, errors = agent.validate_recommendation(
@@ -147,9 +138,6 @@ def test_workload_agent_validation_exceeds_budget():
     assert any("budget" in str(e).lower() for e in errors)
 
 
-# ============================================================================
-# PROVIDER AGENT TESTS
-# ============================================================================
 
 def test_provider_agent_deterministic_fallback():
     """Test provider agent selects node deterministically."""
@@ -157,7 +145,6 @@ def test_provider_agent_deterministic_fallback():
     
     agent = ProviderRecommendationAgent(db)
     
-    # Mock candidate nodes
     candidates = [
         {
             "node_id": "node-1",
@@ -189,12 +176,10 @@ def test_provider_agent_deterministic_fallback():
     
     recommendation = agent.deterministic_fallback(context)
     
-    # Should select based on scoring
     assert "node_id" in recommendation
     assert "provider_id" in recommendation
     assert recommendation["fallback"] == True
     
-    # node-1 should win (highest reliability + good capacity)
     assert recommendation["node_id"] == "node-1"
 
 
@@ -247,9 +232,6 @@ def test_provider_agent_validation_node_not_in_list():
     assert errors is not None
 
 
-# ============================================================================
-# RECOVERY AGENT TESTS
-# ============================================================================
 
 def test_recovery_agent_deterministic_fallback_urgent():
     """Test recovery agent chooses immediate reassign when urgent."""
@@ -257,7 +239,6 @@ def test_recovery_agent_deterministic_fallback_urgent():
     
     agent = RecoveryAgent(db)
     
-    # Urgent scenario: many tasks, deadline pressure
     context = {
         "incident": {"severity": "HIGH"},
         "affected_tasks_count": 15,
@@ -278,7 +259,6 @@ def test_recovery_agent_deterministic_fallback_wait():
     
     agent = RecoveryAgent(db)
     
-    # Low urgency: few tasks, no deadline
     context = {
         "incident": {"severity": "MEDIUM"},
         "affected_tasks_count": 2,
@@ -337,20 +317,15 @@ def test_recovery_agent_validation_impossible_reassign():
     assert any("no available nodes" in str(e).lower() for e in errors)
 
 
-# ============================================================================
-# FALLBACK BEHAVIOR TESTS
-# ============================================================================
 
 def test_agents_work_without_bedrock():
     """Test all agents function without Bedrock available."""
     db = next(get_test_db())
     
-    # All agents should work in fallback mode
     workload_agent = WorkloadAnalysisAgent(db)
     provider_agent = ProviderRecommendationAgent(db)
     recovery_agent = RecoveryAgent(db)
     
-    # Workload agent
     workload_rec, workload_record = workload_agent.recommend(
         request_context_id="test-job",
         request_context_type="job",
@@ -363,7 +338,6 @@ def test_agents_work_without_bedrock():
     assert "cpu_cores_min" in workload_rec
     assert workload_record.action_taken == "fallback"
     
-    # Provider agent
     provider_rec, provider_record = provider_agent.recommend(
         request_context_id="test-task",
         request_context_type="task",
@@ -381,7 +355,6 @@ def test_agents_work_without_bedrock():
     assert "node_id" in provider_rec
     assert provider_record.action_taken == "fallback"
     
-    # Recovery agent
     recovery_rec, recovery_record = recovery_agent.recommend(
         request_context_id="test-incident",
         request_context_type="incident",

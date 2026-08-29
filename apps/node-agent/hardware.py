@@ -84,7 +84,6 @@ class HardwareDiscovery:
         Attempts to detect NVIDIA GPUs using nvidia-smi or pynvml.
         Returns None if no GPU detected or libraries unavailable.
         """
-        # Try pynvml first (more reliable)
         try:
             import pynvml
             pynvml.nvmlInit()
@@ -112,7 +111,6 @@ class HardwareDiscovery:
         except Exception as e:
             logger.debug(f"pynvml GPU detection failed: {e}")
         
-        # Fallback: try nvidia-smi command
         try:
             import subprocess
             result = subprocess.run(
@@ -180,22 +178,18 @@ class HardwareDiscovery:
             "python_version": platform.python_version()
         }
         
-        # CPU
         cpu_info = cls.get_cpu_info()
         capabilities.update(cpu_info)
         logger.info(f"CPU: {cpu_info.get('cpu_cores_logical', '?')} cores")
         
-        # Memory
         mem_info = cls.get_memory_info()
         capabilities.update(mem_info)
         logger.info(f"RAM: {mem_info.get('ram_total_gb', '?')} GB")
         
-        # Disk
         disk_info = cls.get_disk_info()
         capabilities.update(disk_info)
         logger.info(f"Disk: {disk_info.get('disk_free_gb', '?')} GB free")
         
-        # GPU (optional)
         gpu_info = cls.get_gpu_info()
         if gpu_info:
             capabilities.update(gpu_info)
@@ -204,7 +198,6 @@ class HardwareDiscovery:
             capabilities["gpu_available"] = False
             logger.info("GPU: None detected")
         
-        # Network
         net_info = cls.get_network_info()
         capabilities.update(net_info)
         

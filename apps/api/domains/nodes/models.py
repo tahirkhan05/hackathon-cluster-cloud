@@ -27,44 +27,34 @@ class Node(Base):
     node_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     provider_id = Column(String, nullable=False, index=True)
     
-    # Node identification
     hostname = Column(String, nullable=True)
     ip_address = Column(String, nullable=True)
     
-    # Capabilities (cpu_cores, ram_gb, gpu_model, docker_version, etc.)
     capabilities = Column(JSON, nullable=False)
     
-    # Status
     status = Column(SQLEnum(NodeStatus), default=NodeStatus.AVAILABLE, index=True)
     is_healthy = Column(Boolean, default=True)
     
-    # Reliability
     reliability_score = Column(Float, default=1.0)
     total_tasks_completed = Column(Integer, default=0)
     total_tasks_failed = Column(Integer, default=0)
     total_recovery_assists = Column(Integer, default=0)
     
-    # Heartbeat tracking
     last_heartbeat = Column(DateTime, default=datetime.utcnow, index=True)
     heartbeat_interval_seconds = Column(Integer, default=5)
     
-    # Economics
     clstr_earned = Column(Numeric(10, 2), default=0)
     clstr_staked = Column(Numeric(10, 2), default=0)
     clstr_pending = Column(Numeric(10, 2), default=0)
     
-    # Cost per task (for simple pricing)
     cost_per_task_clstr = Column(Numeric(10, 2), default=10)
     
-    # Capacity
     max_concurrent_tasks = Column(Integer, default=2)
     current_task_count = Column(Integer, default=0)
     
-    # Timing
     registered_at = Column(DateTime, default=datetime.utcnow)
     last_seen_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     tasks = relationship("Task", back_populates="node")
     incidents = relationship("Incident", back_populates="node", foreign_keys="[Incident.node_id]")
     reliability = relationship("ReliabilityScore", back_populates="node", uselist=False)

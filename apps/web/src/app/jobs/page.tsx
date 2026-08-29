@@ -80,7 +80,7 @@ export default function JobsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Jobs</h1>
@@ -96,7 +96,7 @@ export default function JobsPage() {
           </Link>
         </div>
 
-        {/* Stats */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <button
             onClick={() => setFilter('all')}
@@ -163,7 +163,7 @@ export default function JobsPage() {
           </button>
         </div>
 
-        {/* Jobs List */}
+        {}
         <Card>
           <CardBody className="p-0">
             {filteredJobs.length === 0 ? (

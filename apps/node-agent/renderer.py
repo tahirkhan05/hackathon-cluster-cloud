@@ -105,24 +105,19 @@ class FrameRenderer:
     ) -> Dict[str, Any]:
         """Render actual image using PIL."""
         
-        # Create image with animated gradient
         image = Image.new("RGB", (width, height))
         draw = ImageDraw.Draw(image)
         
-        # Animated gradient based on frame number
         progress = frame_number / max(total_frames - 1, 1)
         
         for y in range(height):
-            # Calculate color based on position and frame
             r = int(255 * (y / height) * (1 - progress * 0.5))
             g = int(255 * progress)
             b = int(255 * (1 - y / height) * (0.5 + progress * 0.5))
             
             draw.line([(0, y), (width, y)], fill=(r, g, b))
         
-        # Add complexity-based workload
         if complexity == "high":
-            # More CPU work: additional patterns
             for i in range(0, width, 20):
                 for j in range(0, height, 20):
                     phase = (frame_number + i + j) % 100
@@ -132,7 +127,6 @@ class FrameRenderer:
                         fill=(alpha, alpha, 255 - alpha)
                     )
         elif complexity == "medium":
-            # Some patterns
             for i in range(0, width, 40):
                 draw.line(
                     [(i, 0), (i, height)],
@@ -140,7 +134,6 @@ class FrameRenderer:
                     width=2
                 )
         
-        # Add text overlays
         try:
             font_large = ImageFont.truetype("arial.ttf", 72)
             font_small = ImageFont.truetype("arial.ttf", 24)
@@ -148,7 +141,6 @@ class FrameRenderer:
             font_large = ImageFont.load_default()
             font_small = ImageFont.load_default()
         
-        # Frame number
         draw.text(
             (width // 2 - 100, height // 2 - 50),
             f"Frame {frame_number}",
@@ -156,7 +148,6 @@ class FrameRenderer:
             font=font_large
         )
         
-        # Node ID watermark
         draw.text(
             (20, height - 60),
             f"Node: {node_id[:12]}",
@@ -164,7 +155,6 @@ class FrameRenderer:
             font=font_small
         )
         
-        # Timestamp
         timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         draw.text(
             (20, height - 30),
@@ -173,12 +163,10 @@ class FrameRenderer:
             font=font_small
         )
         
-        # Save frame
         filename = f"frame_{frame_number:06d}.png"
         output_path = self.output_dir / filename
         image.save(output_path, "PNG")
         
-        # Calculate checksum
         checksum = self._calculate_checksum(output_path)
         
         file_size = output_path.stat().st_size
@@ -204,14 +192,12 @@ class FrameRenderer:
     ) -> Dict[str, Any]:
         """Mock renderer when PIL not available."""
         
-        # Simulate rendering workload
         work_iterations = {
             "low": 1000000,
             "medium": 5000000,
             "high": 10000000
         }.get(complexity, 5000000)
         
-        # CPU-intensive work
         result_hash = hashlib.sha256()
         for i in range(work_iterations):
             data = f"{frame_number}-{node_id}-{i}".encode()
@@ -219,7 +205,6 @@ class FrameRenderer:
         
         checksum = result_hash.hexdigest()
         
-        # Create mock output file
         filename = f"frame_{frame_number:06d}.mock"
         output_path = self.output_dir / filename
         

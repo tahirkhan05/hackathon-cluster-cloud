@@ -113,9 +113,9 @@ export function IncidentRecoveryVisualization({ incident, loading }: Props) {
       </CardHeader>
 
       <CardBody className="space-y-6">
-        {/* Failure Timeline */}
+        {}
         <div className="flex items-center gap-4">
-          {/* Failed Node */}
+          {}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <XCircle className="w-5 h-5 text-red-600" />
@@ -138,10 +138,10 @@ export function IncidentRecoveryVisualization({ incident, loading }: Props) {
             </div>
           </div>
 
-          {/* Arrow */}
+          {}
           <ArrowRight className="w-6 h-6 text-gray-400 flex-shrink-0" />
 
-          {/* Replacement Node */}
+          {}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <RefreshCw
@@ -194,7 +194,7 @@ export function IncidentRecoveryVisualization({ incident, loading }: Props) {
           </div>
         </div>
 
-        {/* AI Recovery Reasoning */}
+        {}
         {incident.recovery_reasoning && (
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
@@ -213,7 +213,7 @@ export function IncidentRecoveryVisualization({ incident, loading }: Props) {
           </div>
         )}
 
-        {/* Recovery Progress */}
+        {}
         {isRecovering && (
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -232,7 +232,7 @@ export function IncidentRecoveryVisualization({ incident, loading }: Props) {
           </div>
         )}
 
-        {/* Recovery Stats */}
+        {}
         {isResolved && (
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded-lg p-3">
@@ -273,7 +273,7 @@ export function IncidentRecoveryVisualization({ incident, loading }: Props) {
           </div>
         )}
 
-        {/* Economic Impact */}
+        {}
         {incident.economics && (
           <div className="border-t pt-4">
             <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -309,7 +309,7 @@ export function IncidentRecoveryVisualization({ incident, loading }: Props) {
           </div>
         )}
 
-        {/* Timeline */}
+        {}
         <div className="text-xs text-gray-500 flex items-center justify-between">
           <span>Detected: {formatTimestamp(incident.detected_at)}</span>
           {incident.resolved_at && (

@@ -14,7 +14,6 @@ from database import Base, get_db
 from domains.nodes.models import Node, NodeStatus
 from domains.nodes.service import NodeService
 
-# Test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -79,7 +78,6 @@ def test_node_registration():
 
 def test_duplicate_node_registration():
     """Test registering same provider_id twice (should reactivate)."""
-    # First registration
     response1 = client.post(
         "/api/nodes/register",
         json={
@@ -93,7 +91,6 @@ def test_duplicate_node_registration():
     assert response1.status_code == 200
     node_id_1 = response1.json()["node_id"]
     
-    # Second registration with same provider_id
     response2 = client.post(
         "/api/nodes/register",
         json={
@@ -107,17 +104,14 @@ def test_duplicate_node_registration():
     assert response2.status_code == 200
     node_id_2 = response2.json()["node_id"]
     
-    # Should be same node ID (reactivation)
     assert node_id_1 == node_id_2
     
-    # Should have updated capabilities
     assert response2.json()["capabilities"]["cpu_cores"] == 8
     assert response2.json()["max_concurrent_tasks"] == 4
 
 
 def test_heartbeat():
     """Test heartbeat updates node status."""
-    # Register node
     reg_response = client.post(
         "/api/nodes/register",
         json={
@@ -129,7 +123,6 @@ def test_heartbeat():
     )
     node_id = reg_response.json()["node_id"]
     
-    # Send heartbeat
     hb_response = client.post(
         f"/api/nodes/{node_id}/heartbeat",
         json={
@@ -161,7 +154,6 @@ def test_heartbeat_nonexistent_node():
 
 def test_heartbeat_capacity_full():
     """Test node becomes BUSY when at capacity."""
-    # Register node with max 2 tasks
     reg_response = client.post(
         "/api/nodes/register",
         json={
@@ -173,7 +165,6 @@ def test_heartbeat_capacity_full():
     )
     node_id = reg_response.json()["node_id"]
     
-    # Heartbeat with 2 tasks (at capacity)
     hb_response = client.post(
         f"/api/nodes/{node_id}/heartbeat",
         json={
@@ -189,7 +180,6 @@ def test_heartbeat_capacity_full():
 
 def test_heartbeat_unhealthy():
     """Test node becomes OFFLINE when unhealthy."""
-    # Register node
     reg_response = client.post(
         "/api/nodes/register",
         json={
@@ -201,7 +191,6 @@ def test_heartbeat_unhealthy():
     )
     node_id = reg_response.json()["node_id"]
     
-    # Heartbeat with unhealthy status
     hb_response = client.post(
         f"/api/nodes/{node_id}/heartbeat",
         json={
@@ -216,7 +205,6 @@ def test_heartbeat_unhealthy():
 
 def test_list_nodes():
     """Test listing all nodes."""
-    # Register multiple nodes
     for i in range(3):
         client.post(
             "/api/nodes/register",
@@ -228,7 +216,6 @@ def test_list_nodes():
             }
         )
     
-    # List all nodes
     response = client.get("/api/nodes/")
     assert response.status_code == 200
     
@@ -239,7 +226,6 @@ def test_list_nodes():
 
 def test_list_nodes_filter_by_status():
     """Test filtering nodes by status."""
-    # Register node
     reg_response = client.post(
         "/api/nodes/register",
         json={
@@ -251,7 +237,6 @@ def test_list_nodes_filter_by_status():
     )
     node_id = reg_response.json()["node_id"]
     
-    # Make it busy
     client.post(
         f"/api/nodes/{node_id}/heartbeat",
         json={
@@ -261,7 +246,6 @@ def test_list_nodes_filter_by_status():
         }
     )
     
-    # Filter by busy status
     response = client.get("/api/nodes/?status=busy")
     assert response.status_code == 200
     assert response.json()["total"] == 1
@@ -270,7 +254,6 @@ def test_list_nodes_filter_by_status():
 
 def test_get_node():
     """Test getting specific node details."""
-    # Register node
     reg_response = client.post(
         "/api/nodes/register",
         json={
@@ -283,7 +266,6 @@ def test_get_node():
     )
     node_id = reg_response.json()["node_id"]
     
-    # Get node details
     response = client.get(f"/api/nodes/{node_id}")
     assert response.status_code == 200
     
@@ -301,7 +283,6 @@ def test_get_nonexistent_node():
 
 def test_node_statistics():
     """Test node statistics endpoint."""
-    # Register nodes with different states
     for i in range(5):
         client.post(
             "/api/nodes/register",
@@ -313,7 +294,6 @@ def test_node_statistics():
             }
         )
     
-    # Get statistics
     response = client.get("/api/nodes/statistics")
     assert response.status_code == 200
     
@@ -328,7 +308,6 @@ def test_stale_node_detection():
     """Test stale node detection service."""
     db = next(override_get_db())
     
-    # Register node
     reg_response = client.post(
         "/api/nodes/register",
         json={
@@ -340,12 +319,10 @@ def test_stale_node_detection():
     )
     node_id = reg_response.json()["node_id"]
     
-    # Get node and manually set old heartbeat
     node = db.query(Node).filter(Node.node_id == node_id).first()
     node.last_heartbeat = datetime.utcnow() - timedelta(seconds=60)
     db.commit()
     
-    # Detect stale nodes (20 second timeout)
     stale_nodes = NodeService.detect_stale_nodes(db, timeout_seconds=20)
     assert len(stale_nodes) == 1
     assert stale_nodes[0].node_id == node_id
@@ -355,7 +332,6 @@ def test_mark_stale_nodes_offline():
     """Test marking stale nodes as offline."""
     db = next(override_get_db())
     
-    # Register node
     reg_response = client.post(
         "/api/nodes/register",
         json={
@@ -367,16 +343,13 @@ def test_mark_stale_nodes_offline():
     )
     node_id = reg_response.json()["node_id"]
     
-    # Make heartbeat old
     node = db.query(Node).filter(Node.node_id == node_id).first()
     node.last_heartbeat = datetime.utcnow() - timedelta(seconds=60)
     db.commit()
     
-    # Mark stale nodes offline
     count = NodeService.mark_stale_nodes_offline(db, timeout_seconds=20)
     assert count == 1
     
-    # Verify node is offline
     db.refresh(node)
     assert node.status == NodeStatus.OFFLINE
     assert node.is_healthy == False
@@ -388,15 +361,13 @@ def test_invalid_registration_missing_fields():
         "/api/nodes/register",
         json={
             "provider_id": "incomplete-node"
-            # Missing capabilities and other required fields
         }
     )
-    assert response.status_code == 422  # Validation error
+    assert response.status_code == 422
 
 
 def test_invalid_heartbeat_payload():
     """Test heartbeat with invalid payload."""
-    # Register valid node first
     reg_response = client.post(
         "/api/nodes/register",
         json={
@@ -408,15 +379,13 @@ def test_invalid_heartbeat_payload():
     )
     node_id = reg_response.json()["node_id"]
     
-    # Send invalid heartbeat
     response = client.post(
         f"/api/nodes/{node_id}/heartbeat",
         json={
             "invalid_field": "value"
-            # Missing required fields
         }
     )
-    assert response.status_code == 422  # Validation error
+    assert response.status_code == 422
 
 
 if __name__ == "__main__":

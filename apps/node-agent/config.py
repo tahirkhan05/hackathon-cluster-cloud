@@ -12,27 +12,21 @@ from dataclasses import dataclass
 class AgentConfig:
     """Node agent configuration from environment."""
     
-    # Control Plane
     control_plane_url: str
     api_key: str
     
-    # Node Identity
     provider_id: str
     hostname: str
     
-    # Heartbeat
     heartbeat_interval_seconds: int
     heartbeat_timeout_seconds: int
     max_heartbeat_failures: int
     
-    # Capacity
     max_concurrent_tasks: int
     cost_per_task_clstr: float
     
-    # Logging
     log_level: str
     
-    # Demo/Testing
     simulate_failure: bool
     failure_after_seconds: int
     

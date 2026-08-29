@@ -6,7 +6,6 @@ Run with: python test_agent.py
 import os
 import sys
 
-# Test imports
 try:
     from config import AgentConfig
     from hardware import HardwareDiscovery
@@ -20,7 +19,6 @@ def test_config():
     """Test configuration loading."""
     print("\n📋 Testing configuration...")
     
-    # Set test environment
     os.environ["CONTROL_PLANE_URL"] = "http://test.example.com"
     os.environ["NODE_AGENT_ID"] = "test-node"
     os.environ["HEARTBEAT_INTERVAL_SECONDS"] = "10"
@@ -40,7 +38,6 @@ def test_hardware_discovery():
     
     capabilities = HardwareDiscovery.discover_all()
     
-    # Check required fields
     required_fields = ["platform", "hostname"]
     for field in required_fields:
         assert field in capabilities, f"Missing field: {field}"
@@ -48,7 +45,6 @@ def test_hardware_discovery():
     print(f"✅ Hardware discovery test passed")
     print(f"   Detected: {capabilities.get('hostname')}")
     
-    # Show what was detected
     if capabilities.get("ram_total_gb"):
         print(f"   RAM: {capabilities['ram_total_gb']} GB")
     

@@ -119,7 +119,6 @@ What recovery strategy do you recommend?"""
         if priority not in ["high", "medium", "low"]:
             errors.append(f"Invalid priority: {priority}")
         
-        # If immediate reassignment but no nodes available
         if strategy == "immediate_reassign" and context["available_nodes_count"] == 0:
             errors.append("Cannot immediate_reassign with no available nodes")
         
@@ -135,27 +134,22 @@ What recovery strategy do you recommend?"""
         available_nodes = context["available_nodes_count"]
         has_deadline = context["has_deadline_pressure"]
         
-        # Rule-based decision
         if available_nodes == 0:
-            # No nodes available, must wait
             strategy = "wait_for_recovery"
             priority = "high" if affected_count > 5 else "medium"
-            max_wait = 300  # 5 minutes
+            max_wait = 300
             notify = affected_count > 10
         elif has_deadline or affected_count > 10:
-            # Urgent, reassign immediately
             strategy = "immediate_reassign"
             priority = "high"
             max_wait = None
             notify = True
         elif affected_count <= 3:
-            # Few tasks, can wait a bit
             strategy = "wait_for_recovery"
             priority = "low"
-            max_wait = 120  # 2 minutes
+            max_wait = 120
             notify = False
         else:
-            # Default: reassign
             strategy = "immediate_reassign"
             priority = "medium"
             max_wait = None

@@ -34,7 +34,6 @@ class ProviderRecommendationAgent(BaseAgent):
     ) -> Dict[str, Any]:
         """Gather context about available nodes and requirements."""
         
-        # Format candidate nodes for AI
         nodes_data = []
         for node in candidate_nodes:
             nodes_data.append({
@@ -120,7 +119,6 @@ Recommend the best node based on reliability, cost, and capacity."""
         if not node_id or not provider_id:
             return False, {}, ["Missing node_id or provider_id"]
         
-        # Check node exists in candidates
         candidates = context["candidate_nodes"]
         matching_node = None
         
@@ -132,8 +130,6 @@ Recommend the best node based on reliability, cost, and capacity."""
         if not matching_node:
             return False, {}, [f"Recommended node {node_id} not in candidate list"]
         
-        # All candidates already passed compatibility checks
-        # so if it's in the list, it's valid
         
         return True, {"validated_node": matching_node}, None
     
@@ -145,7 +141,6 @@ Recommend the best node based on reliability, cost, and capacity."""
         if not candidates:
             return {"node_id": None, "provider_id": None, "fallback": True}
         
-        # Score nodes using same algorithm as scheduler
         WEIGHT_RELIABILITY = 0.40
         WEIGHT_COST = 0.30
         WEIGHT_CAPACITY = 0.30

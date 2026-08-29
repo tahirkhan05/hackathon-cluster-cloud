@@ -10,7 +10,6 @@ def seed_workload_types(db: Session):
     
     MVP: Frame rendering workload type.
     """
-    # Check if frame_rendering already exists
     existing = db.query(WorkloadType).filter(
         WorkloadType.workload_type == "frame_rendering"
     ).first()
@@ -19,7 +18,6 @@ def seed_workload_types(db: Session):
         print("Workload types already seeded")
         return
     
-    # Create frame rendering workload type
     frame_rendering = WorkloadType(
         workload_type="frame_rendering",
         name="3D Frame Rendering",
@@ -32,7 +30,7 @@ def seed_workload_types(db: Session):
             "gpu_model": "any",
             "docker_support": True
         },
-        estimated_task_duration=60  # 60 seconds per frame average
+        estimated_task_duration=60
     )
     
     db.add(frame_rendering)

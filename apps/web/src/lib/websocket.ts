@@ -32,7 +32,6 @@ export class WebSocketClient {
   private eventHandlers: Map<string, EventHandler[]> = new Map();
   private isManualClose: boolean = false;
   
-  // Lifecycle callbacks
   private onConnectCallback?: () => void;
   private onDisconnectCallback?: () => void;
   private onErrorCallback?: (error: Event) => void;
@@ -96,7 +95,6 @@ export class WebSocketClient {
           this.onDisconnectCallback();
         }
 
-        // Attempt reconnection if not manually closed
         if (!this.isManualClose) {
           this.scheduleReconnect();
         }
@@ -136,7 +134,6 @@ export class WebSocketClient {
     
     this.eventHandlers.get(eventType)!.push(handler);
 
-    // Return unsubscribe function
     return () => {
       const handlers = this.eventHandlers.get(eventType);
       if (handlers) {
@@ -186,14 +183,11 @@ export class WebSocketClient {
     };
   }
 
-  // Private methods
 
   private handleEvent(event: RealtimeEvent): void {
-    // Call wildcard handlers
     const wildcardHandlers = this.eventHandlers.get('*') || [];
     wildcardHandlers.forEach((handler) => handler(event));
 
-    // Call specific event handlers
     const specificHandlers = this.eventHandlers.get(event.event_type) || [];
     specificHandlers.forEach((handler) => handler(event));
   }
@@ -219,7 +213,6 @@ export class WebSocketClient {
   }
 }
 
-// Singleton instance
 let wsClient: WebSocketClient | null = null;
 
 /**
@@ -242,10 +235,9 @@ export function useRealtimeEvents(
   const client = getWebSocketClient();
   
   if (typeof window === 'undefined') {
-    return; // Don't run on server
+    return;
   }
 
-  // Subscribe to events
   const eventTypes = Array.isArray(eventType) ? eventType : [eventType];
   const unsubscribers: (() => void)[] = [];
 
@@ -254,7 +246,6 @@ export function useRealtimeEvents(
     unsubscribers.push(unsub);
   });
 
-  // Cleanup on unmount
   return () => {
     unsubscribers.forEach((unsub) => unsub());
   };

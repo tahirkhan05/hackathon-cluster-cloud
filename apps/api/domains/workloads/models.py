@@ -19,11 +19,8 @@ class WorkloadType(Base):
     parallelizable = Column(Boolean, default=False)
     description = Column(String, nullable=True)
     
-    # JSON structure: {"cpu_cores": int, "ram_gb": int, "gpu_required": bool, "gpu_model": str}
     resource_requirements = Column(JSON, nullable=True)
     
-    # Estimated duration per task in seconds
     estimated_task_duration = Column(Integer, nullable=True)
     
-    # Relationships
     jobs = relationship("Job", back_populates="workload")

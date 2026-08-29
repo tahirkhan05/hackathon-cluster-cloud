@@ -39,7 +39,6 @@ class EconomicSystem:
     - Transaction audit trail
     """
     
-    # Account prefixes
     CUSTOMER_PREFIX = "customer:"
     PROVIDER_PREFIX = "provider:"
     BROKER_ACCOUNT = "broker:platform"
@@ -49,9 +48,6 @@ class EconomicSystem:
     def __init__(self, db: Session):
         self.db = db
     
-    # ========================================================================
-    # BALANCE MANAGEMENT
-    # ========================================================================
     
     def get_balance(self, account: str) -> Decimal:
         """
@@ -59,14 +55,12 @@ class EconomicSystem:
         
         Calculates from transaction ledger (source of truth).
         """
-        # Sum all transactions TO this account (credits)
         credits = self.db.query(
             func.sum(Transaction.amount_clstr)
         ).filter(
             Transaction.to_account == account
         ).scalar() or Decimal(0)
         
-        # Sum all transactions FROM this account (debits)
         debits = self.db.query(
             func.sum(Transaction.amount_clstr)
         ).filter(
@@ -94,7 +88,6 @@ class EconomicSystem:
         """
         account = f"{self.CUSTOMER_PREFIX}{customer_id}"
         
-        # Check if already initialized
         existing = self.db.query(Transaction).filter(
             Transaction.to_account == account,
             Transaction.transaction_type == TransactionType.INITIAL_BALANCE
@@ -104,7 +97,6 @@ class EconomicSystem:
             logger.info(f"Customer wallet {account} already initialized")
             return existing
         
-        # Create initial balance transaction
         initial_amount = Decimal(settings.INITIAL_CUSTOMER_BALANCE)
         
         transaction = self._create_transaction(
@@ -127,7 +119,6 @@ class EconomicSystem:
         """
         account = f"{self.PROVIDER_PREFIX}{provider_id}"
         
-        # Check if already initialized
         existing = self.db.query(Transaction).filter(
             Transaction.to_account == account,
             Transaction.transaction_type == TransactionType.INITIAL_BALANCE
@@ -136,7 +127,6 @@ class EconomicSystem:
         if existing:
             return existing
         
-        # Create zero-balance initialization
         transaction = self._create_transaction(
             transaction_type=TransactionType.INITIAL_BALANCE,
             from_account="system:bank",
@@ -150,9 +140,6 @@ class EconomicSystem:
         
         return transaction
     
-    # ========================================================================
-    # JOB PAYMENT FLOWS
-    # ========================================================================
     
     def job_created_payment(
         self,
@@ -169,7 +156,6 @@ class EconomicSystem:
         customer_account = f"{self.CUSTOMER_PREFIX}{customer_id}"
         escrow_account = f"escrow:job:{job_id}"
         
-        # Check if already paid
         existing = self.db.query(Transaction).filter(
             Transaction.related_job_id == job_id,
             Transaction.transaction_type == TransactionType.JOB_CREATED
@@ -179,7 +165,6 @@ class EconomicSystem:
             logger.info(f"Job {job_id} already paid")
             return existing
         
-        # Validate balance
         customer_balance = self.get_balance(customer_account)
         if customer_balance < total_budget:
             raise InsufficientBalanceError(
@@ -187,7 +172,6 @@ class EconomicSystem:
                 f"{customer_balance} < {total_budget}"
             )
         
-        # Create payment transaction
         transaction = self._create_transaction(
             transaction_type=TransactionType.JOB_CREATED,
             from_account=customer_account,
@@ -221,7 +205,6 @@ class EconomicSystem:
         Returns list of transactions created.
         Idempotent based on task_id.
         """
-        # Check if already paid
         existing = self.db.query(Transaction).filter(
             Transaction.related_task_id == task_id,
             Transaction.transaction_type == TransactionType.TASK_COMPLETED
@@ -229,7 +212,6 @@ class EconomicSystem:
         
         if existing:
             logger.info(f"Task {task_id} already paid")
-            # Return all related transactions
             return self.db.query(Transaction).filter(
                 Transaction.related_task_id == task_id
             ).all()
@@ -237,11 +219,9 @@ class EconomicSystem:
         escrow_account = f"escrow:job:{job_id}"
         provider_account = f"{self.PROVIDER_PREFIX}{provider_id}"
         
-        # Calculate broker fee
         broker_fee = task_cost * Decimal(settings.BROKER_FEE_PERCENTAGE) / Decimal(100)
         provider_payment = task_cost - broker_fee
         
-        # Validate escrow has funds
         escrow_balance = self.get_balance(escrow_account)
         if escrow_balance < task_cost:
             raise InsufficientBalanceError(
@@ -251,7 +231,6 @@ class EconomicSystem:
         
         transactions = []
         
-        # Payment to provider
         provider_tx = self._create_transaction(
             transaction_type=TransactionType.TASK_COMPLETED,
             from_account=escrow_account,
@@ -264,7 +243,6 @@ class EconomicSystem:
         )
         transactions.append(provider_tx)
         
-        # Broker fee
         broker_tx = self._create_transaction(
             transaction_type=TransactionType.BROKER_FEE,
             from_account=escrow_account,
@@ -283,9 +261,6 @@ class EconomicSystem:
         
         return transactions
     
-    # ========================================================================
-    # STAKE MANAGEMENT
-    # ========================================================================
     
     def hold_provider_stake(
         self,
@@ -303,7 +278,6 @@ class EconomicSystem:
         
         provider_account = f"{self.PROVIDER_PREFIX}{provider_id}"
         
-        # Check if stake already held
         existing = self.db.query(Transaction).filter(
             Transaction.related_node_id == node_id,
             Transaction.transaction_type == TransactionType.STAKE_HELD
@@ -313,7 +287,6 @@ class EconomicSystem:
             logger.info(f"Stake for node {node_id} already held")
             return existing
         
-        # Validate balance
         provider_balance = self.get_balance(provider_account)
         if provider_balance < stake_amount:
             raise InsufficientBalanceError(
@@ -321,7 +294,6 @@ class EconomicSystem:
                 f"{provider_balance} < {stake_amount}"
             )
         
-        # Hold stake
         transaction = self._create_transaction(
             transaction_type=TransactionType.STAKE_HELD,
             from_account=provider_account,
@@ -347,7 +319,6 @@ class EconomicSystem:
         """
         provider_account = f"{self.PROVIDER_PREFIX}{provider_id}"
         
-        # Find original stake transaction
         stake_tx = self.db.query(Transaction).filter(
             Transaction.related_node_id == node_id,
             Transaction.transaction_type == TransactionType.STAKE_HELD
@@ -357,7 +328,6 @@ class EconomicSystem:
             logger.warning(f"No stake found for node {node_id}")
             return None
         
-        # Check if already returned
         returned_tx = self.db.query(Transaction).filter(
             Transaction.related_node_id == node_id,
             Transaction.transaction_type == TransactionType.STAKE_RETURNED
@@ -367,7 +337,6 @@ class EconomicSystem:
             logger.info(f"Stake for node {node_id} already returned")
             return returned_tx
         
-        # Return stake
         transaction = self._create_transaction(
             transaction_type=TransactionType.STAKE_RETURNED,
             from_account=self.STAKE_POOL,
@@ -383,9 +352,6 @@ class EconomicSystem:
         
         return transaction
     
-    # ========================================================================
-    # FAILURE ECONOMICS
-    # ========================================================================
     
     def apply_failure_penalty(
         self,
@@ -400,7 +366,6 @@ class EconomicSystem:
         Penalty comes from provider's stake.
         Idempotent based on incident_id.
         """
-        # Check if penalty already applied
         existing = self.db.query(Transaction).filter(
             Transaction.related_incident_id == incident_id,
             Transaction.transaction_type == TransactionType.PENALTY_APPLIED
@@ -410,7 +375,6 @@ class EconomicSystem:
             logger.info(f"Penalty for incident {incident_id} already applied")
             return existing
         
-        # Find provider's stake
         stake_tx = self.db.query(Transaction).filter(
             Transaction.related_node_id == node_id,
             Transaction.transaction_type == TransactionType.STAKE_HELD
@@ -419,14 +383,12 @@ class EconomicSystem:
         if not stake_tx:
             raise InvalidTransactionError(f"No stake found for node {node_id}")
         
-        # Calculate penalty
         penalty_amount = (
             stake_tx.amount_clstr * 
             Decimal(settings.FAILURE_PENALTY_PERCENTAGE) / 
             Decimal(100)
         )
         
-        # Apply penalty
         transaction = self._create_transaction(
             transaction_type=TransactionType.PENALTY_APPLIED,
             from_account=self.STAKE_POOL,
@@ -460,7 +422,6 @@ class EconomicSystem:
         """
         customer_account = f"{self.CUSTOMER_PREFIX}{customer_id}"
         
-        # Check if already compensated
         existing = self.db.query(Transaction).filter(
             Transaction.related_incident_id == incident_id,
             Transaction.to_account == customer_account,
@@ -471,7 +432,6 @@ class EconomicSystem:
             logger.info(f"Customer {customer_id} already compensated for incident {incident_id}")
             return existing
         
-        # Validate compensation pool has funds
         pool_balance = self.get_balance(self.COMPENSATION_POOL)
         if pool_balance < compensation_amount:
             raise InsufficientBalanceError(
@@ -479,7 +439,6 @@ class EconomicSystem:
                 f"{pool_balance} < {compensation_amount}"
             )
         
-        # Issue compensation
         transaction = self._create_transaction(
             transaction_type=TransactionType.COMPENSATION_ISSUED,
             from_account=self.COMPENSATION_POOL,
@@ -513,7 +472,6 @@ class EconomicSystem:
         """
         provider_account = f"{self.PROVIDER_PREFIX}{provider_id}"
         
-        # Check if already rewarded
         existing = self.db.query(Transaction).filter(
             Transaction.related_task_id == task_id,
             Transaction.related_incident_id == incident_id,
@@ -524,14 +482,12 @@ class EconomicSystem:
             logger.info(f"Recovery reward for task {task_id} already issued")
             return existing
         
-        # Calculate reward
         reward_amount = (
             base_task_cost * 
             Decimal(settings.RECOVERY_REWARD_PERCENTAGE) / 
             Decimal(100)
         )
         
-        # Issue reward from compensation pool
         transaction = self._create_transaction(
             transaction_type=TransactionType.RECOVERY_REWARD,
             from_account=self.COMPENSATION_POOL,
@@ -550,9 +506,6 @@ class EconomicSystem:
         
         return transaction
     
-    # ========================================================================
-    # TRANSACTION HISTORY
-    # ========================================================================
     
     def get_transaction_history(
         self,
@@ -578,7 +531,6 @@ class EconomicSystem:
         """Get comprehensive account summary."""
         balance = self.get_balance(account)
         
-        # Count transactions
         total_credits = self.db.query(func.count(Transaction.transaction_id)).filter(
             Transaction.to_account == account
         ).scalar() or 0
@@ -587,7 +539,6 @@ class EconomicSystem:
             Transaction.from_account == account
         ).scalar() or 0
         
-        # Recent transactions
         recent = self.get_transaction_history(account, limit=10)
         
         return {
@@ -606,9 +557,6 @@ class EconomicSystem:
             ]
         }
     
-    # ========================================================================
-    # INTERNAL HELPERS
-    # ========================================================================
     
     def _create_transaction(
         self,
@@ -624,14 +572,12 @@ class EconomicSystem:
     ) -> Transaction:
         """Create transaction with balance tracking."""
         
-        # Validate amount
         if amount < 0:
             raise InvalidTransactionError(f"Amount cannot be negative: {amount}")
         
         if amount == 0:
             raise InvalidTransactionError("Amount cannot be zero")
         
-        # Create transaction
         transaction = Transaction(
             transaction_type=transaction_type,
             from_account=from_account,
@@ -648,7 +594,6 @@ class EconomicSystem:
         self.db.commit()
         self.db.refresh(transaction)
         
-        # Update balance tracking
         transaction.from_account_balance_after = self.get_balance(from_account)
         transaction.to_account_balance_after = self.get_balance(to_account)
         

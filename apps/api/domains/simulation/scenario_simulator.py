@@ -70,9 +70,8 @@ class ScenarioSimulator:
         Assumes tasks remain unassigned and eventually timeout.
         """
         timeline = []
-        current_time = 0  # Minutes from now
+        current_time = 0
         
-        # Load state snapshot (read-only)
         tasks = self._load_tasks_snapshot(affected_task_ids)
         jobs = self._load_jobs_for_tasks(tasks)
         
@@ -83,22 +82,20 @@ class ScenarioSimulator:
             "affected_tasks": len(tasks)
         })
         
-        # Estimate degradation timeline
-        current_time += 5  # Wait time
+        current_time += 5
         timeline.append({
             "time_minutes": current_time,
             "event": "tasks_timeout_warning",
             "description": f"{len(tasks)} tasks approaching timeout"
         })
         
-        current_time += 9  # Additional wait
+        current_time += 9
         timeline.append({
             "time_minutes": current_time,
             "event": "job_delay_impact",
             "description": f"{len(jobs)} jobs experiencing delays"
         })
         
-        # Check deadline breaches
         deadline_breaches = 0
         for job in jobs.values():
             deadline_minutes = job.get("deadline_minutes")
@@ -109,7 +106,7 @@ class ScenarioSimulator:
                 if current_time > remaining:
                     deadline_breaches += 1
         
-        current_time += 5  # More delays
+        current_time += 5
         if deadline_breaches > 0:
             timeline.append({
                 "time_minutes": current_time,
@@ -118,7 +115,6 @@ class ScenarioSimulator:
                 "severity": "HIGH"
             })
         
-        # Final completion estimate
         completion_time = current_time + (len(tasks) * self.AVG_TASK_MINUTES)
         
         timeline.append({
@@ -128,8 +124,7 @@ class ScenarioSimulator:
             "note": "Manual intervention likely required"
         })
         
-        # Estimate cost impact
-        cost_impact = len(tasks) * 10.0 * 1.5  # 50% cost penalty for delays
+        cost_impact = len(tasks) * 10.0 * 1.5
         
         return ScenarioResult(
             scenario_name="DO_NOTHING",
@@ -153,9 +148,8 @@ class ScenarioSimulator:
         Assumes tasks are reassigned to healthy nodes immediately.
         """
         timeline = []
-        current_time = 0  # Minutes from now
+        current_time = 0
         
-        # Load state snapshot (read-only)
         tasks = self._load_tasks_snapshot(affected_task_ids)
         jobs = self._load_jobs_for_tasks(tasks)
         
@@ -166,15 +160,13 @@ class ScenarioSimulator:
             "affected_tasks": len(tasks)
         })
         
-        # Recovery decision
-        current_time += 0.5  # AI recommendation time
+        current_time += 0.5
         timeline.append({
             "time_minutes": current_time,
             "event": "recovery_decision",
             "description": "AI recommends immediate recovery"
         })
         
-        # Find replacement nodes
         available_nodes = self._count_available_nodes(exclude_node_id=node_id)
         
         current_time += self.AVG_RECOVERY_MINUTES
@@ -185,7 +177,6 @@ class ScenarioSimulator:
             "available_capacity": available_nodes
         })
         
-        # Tasks reassigned
         current_time += 1.0
         timeline.append({
             "time_minutes": current_time,
@@ -193,7 +184,6 @@ class ScenarioSimulator:
             "description": f"{len(tasks)} tasks reassigned to healthy nodes"
         })
         
-        # Tasks resume
         current_time += 1.0
         timeline.append({
             "time_minutes": current_time,
@@ -201,7 +191,6 @@ class ScenarioSimulator:
             "description": "Task execution resumed"
         })
         
-        # Cluster stabilizes
         current_time += 2.0
         timeline.append({
             "time_minutes": current_time,
@@ -210,7 +199,6 @@ class ScenarioSimulator:
             "status": "HEALTHY"
         })
         
-        # Check deadline breaches with recovery
         deadline_breaches = 0
         for job in jobs.values():
             deadline_minutes = job.get("deadline_minutes")
@@ -218,15 +206,12 @@ class ScenarioSimulator:
                 elapsed = job.get("elapsed_minutes", 0)
                 remaining = deadline_minutes - elapsed
                 
-                # With recovery, much less delay
                 if current_time > remaining:
                     deadline_breaches += 1
         
-        # Final completion estimate (much faster)
-        completion_time = current_time + 0.5  # Minimal additional delay
+        completion_time = current_time + 0.5
         
-        # Estimate cost (normal cost + small recovery overhead)
-        cost_impact = len(tasks) * 10.0 * 1.1  # 10% overhead for recovery
+        cost_impact = len(tasks) * 10.0 * 1.1
         
         return ScenarioResult(
             scenario_name="RECOVER_NOW",
@@ -301,7 +286,6 @@ class ScenarioSimulator:
         
         snapshot = {}
         for job in jobs:
-            # Calculate elapsed time
             elapsed = 0.0
             if job.created_at:
                 elapsed = (datetime.utcnow() - job.created_at).total_seconds() / 60.0

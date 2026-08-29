@@ -28,7 +28,6 @@ class JobService:
         - Budget is positive
         - Required parameters present
         """
-        # Validate workload type
         workload = db.query(WorkloadType).filter(
             WorkloadType.workload_type == job_data.workload_type
         ).first()
@@ -36,7 +35,6 @@ class JobService:
         if not workload:
             raise ValueError(f"Unknown workload type: {job_data.workload_type}")
         
-        # Create job
         job = Job(
             customer_id=job_data.customer_id,
             workload_type=job_data.workload_type,
@@ -74,7 +72,6 @@ class JobService:
         if not job:
             raise ValueError(f"Job not found: {job_id}")
         
-        # Check if transition is valid
         if not job.can_transition_to(new_status):
             raise ValueError(
                 f"Invalid transition: {job.status} → {new_status} "
@@ -84,14 +81,12 @@ class JobService:
         old_status = job.status
         job.status = new_status
         
-        # Update timestamps
         if new_status == JobStatus.RUNNING and not job.started_at:
             job.started_at = datetime.utcnow()
         
         if new_status in [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED]:
             job.completed_at = datetime.utcnow()
         
-        # Handle error message
         if error_message:
             job.error_message = error_message
         
@@ -149,7 +144,6 @@ class JobService:
         
         from domains.tasks.models import Task, TaskStatus
         
-        # Count tasks by status
         total = db.query(Task).filter(Task.job_id == job_id).count()
         completed = db.query(Task).filter(
             Task.job_id == job_id,

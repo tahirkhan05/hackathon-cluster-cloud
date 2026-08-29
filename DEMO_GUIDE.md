@@ -306,7 +306,7 @@ While presenting, highlight:
 A: "Yes. You can run the node agent on any machine. We can demonstrate it on two laptops right now if you would like."
 
 **Q: "How does the AI work?"**
-A: "We use AWS Bedrock (Claude) for explanations. The numerical simulations are deterministic - AI explains the results, it does not generate the numbers."
+A: "The system uses AI for recommendations when AWS Bedrock credentials are configured. When unavailable, it falls back to deterministic algorithms. The numerical simulations are always deterministic - AI only explains the results, it doesn't generate the numbers. The system works fully without AWS."
 
 **Q: "What is next for production?"**
 A: "Docker orchestration, Kubernetes integration, real GPU workload support, blockchain-based settlements, and enterprise authentication."
@@ -483,7 +483,7 @@ The system immediately shows:
 ### **Technical Highlights:**
 - **CASCADE ENGINE**: Traces node → tasks → jobs → deadlines → customer impact
 - **SCENARIO SIMULATOR**: In-memory simulation without mutating production DB
-- **AI ORCHESTRATION**: AWS Bedrock for explanations and recommendations
+- **AI ORCHESTRATION**: Optional AWS Bedrock for explanations (deterministic fallback without it)
 - **TOKEN ECONOMY**: CLSTR tokens for transparent pricing and settlement
 
 ---

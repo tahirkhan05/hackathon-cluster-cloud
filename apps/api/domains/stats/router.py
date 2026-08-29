@@ -19,24 +19,20 @@ async def get_system_stats(db: Session = Depends(get_db)):
     """
     Get overall system statistics.
     """
-    # Node stats
     total_nodes = db.query(func.count(Node.node_id)).scalar() or 0
     healthy_nodes = db.query(func.count(Node.node_id)).filter(
         Node.status == "HEALTHY"
     ).scalar() or 0
     
-    # Job stats
     total_jobs = db.query(func.count(Job.job_id)).scalar() or 0
     active_jobs = db.query(func.count(Job.job_id)).filter(
         Job.status.in_(["RUNNING", "ALLOCATED", "SCHEDULING"])
     ).scalar() or 0
     
-    # Task stats
     total_tasks_completed = db.query(func.count(Task.task_id)).filter(
         Task.status == "COMPLETED"
     ).scalar() or 0
     
-    # Economic stats
     total_clstr_transacted = db.query(
         func.sum(Transaction.amount_clstr)
     ).scalar() or 0

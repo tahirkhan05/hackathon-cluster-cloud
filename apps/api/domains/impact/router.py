@@ -28,7 +28,6 @@ def analyze_node_failure_impact(
     - Decision window
     - AI explanation
     """
-    # Step 1: Cascade analysis
     cascade = CascadeAnalyzer(db)
     impact = cascade.analyze_node_failure(node_id)
     
@@ -39,18 +38,14 @@ def analyze_node_failure_impact(
             "message": "No active tasks on this node"
         }
     
-    # Extract affected task IDs
     affected_task_ids = [t["task_id"] for t in impact.affected_tasks]
     
-    # Step 2: Scenario simulation
     simulator = ScenarioSimulator(db)
     scenarios = simulator.compare_scenarios(node_id, affected_task_ids)
     
-    # Step 3: Decision window
     decision = DecisionWindow(db)
     window = decision.calculate_for_node_failure(node_id, affected_task_ids)
     
-    # Step 4: AI explanation (if available)
     explanation = None
     try:
         bedrock = BedrockClient.from_settings(settings)
@@ -62,7 +57,6 @@ def analyze_node_failure_impact(
                 bedrock
             )
     except Exception as e:
-        # AI explanation is optional
         pass
     
     return {
@@ -83,7 +77,6 @@ def analyze_incident_impact(
     """
     Complete impact analysis for existing incident.
     """
-    # Get incident
     incident = db.query(Incident).filter_by(incident_id=incident_id).first()
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -94,22 +87,17 @@ def analyze_incident_impact(
             detail="Incident is not a node failure"
         )
     
-    # Extract affected task IDs
     affected_task_ids = incident.metadata.get("incomplete_task_ids", []) if incident.metadata else []
     
-    # Step 1: Cascade analysis
     cascade = CascadeAnalyzer(db)
     impact = cascade.analyze_incident(incident)
     
-    # Step 2: Scenario simulation
     simulator = ScenarioSimulator(db)
     scenarios = simulator.compare_scenarios(incident.node_id, affected_task_ids)
     
-    # Step 3: Decision window
     decision = DecisionWindow(db)
     window = decision.calculate_for_incident(incident)
     
-    # Step 4: AI explanation (if available)
     explanation = None
     try:
         bedrock = BedrockClient.from_settings(settings)
@@ -121,7 +109,6 @@ def analyze_incident_impact(
                 bedrock
             )
     except Exception as e:
-        # AI explanation is optional
         pass
     
     return {
@@ -146,12 +133,10 @@ def execute_recovery(
     
     Calls existing RecoveryService - does NOT duplicate logic.
     """
-    # Get incident
     incident = db.query(Incident).filter_by(incident_id=incident_id).first()
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
     
-    # Call existing recovery service
     from domains.recovery.recovery_service import RecoveryService
     
     recovery_service = RecoveryService(db)
@@ -172,7 +157,6 @@ def _generate_explanation(
     bedrock: BedrockClient
 ) -> Optional[str]:
     """Generate AI explanation of impact and scenarios."""
-    # Build context for AI
     do_nothing = scenarios["scenarios"]["do_nothing"]
     recover_now = scenarios["scenarios"]["recover_now"]
     comparison = scenarios["comparison"]

@@ -16,7 +16,6 @@ from domains.incidents.models import Incident, IncidentStatus
 from domains.nodes.failure_detector import FailureDetector
 from domains.recovery.recovery_service import RecoveryService
 
-# Test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_recovery.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -34,7 +33,6 @@ def get_test_db():
 def setup_database():
     Base.metadata.create_all(bind=engine)
     
-    # Seed workload type
     from domains.workloads.seed import seed_workload_types
     db = next(get_test_db())
     seed_workload_types(db)
@@ -118,24 +116,18 @@ def create_test_task(db, job_id: str, node_id: str, task_number: int, status: Ta
     return task
 
 
-# ============================================================================
-# RECOVERY TESTS
-# ============================================================================
 
 def test_recover_single_task():
     """Test recovery of a single failed task."""
     db = next(get_test_db())
     
-    # Setup: Failed node with task
     failed_node = create_test_node(db, "node-failed", NodeStatus.OFFLINE, is_healthy=False)
     
-    # Replacement node
     healthy_node = create_test_node(db, "node-healthy")
     
     job = create_test_job(db)
     task = create_test_task(db, job.job_id, failed_node.node_id, 1, TaskStatus.RUNNING)
     
-    # Create incident
     incident = Incident(
         incident_type="node_failure",
         severity="HIGH",
@@ -151,21 +143,17 @@ def test_recover_single_task():
     db.commit()
     db.refresh(incident)
     
-    # Run recovery
     recovery = RecoveryService(db)
     result = recovery.recover_from_node_failure(incident)
     
-    # Verify recovery
     assert result["status"] == "success"
     assert result["tasks_recovered"] == 1
     
-    # Verify task reassigned
     db.refresh(task)
     assert task.node_id == healthy_node.node_id
     assert task.status == TaskStatus.ASSIGNED
     assert task.retry_count == 1
     
-    # Verify incident resolved
     db.refresh(incident)
     assert incident.status == IncidentStatus.RESOLVED
 
@@ -179,12 +167,10 @@ def test_recover_multiple_tasks():
     
     job = create_test_job(db)
     
-    # Create multiple tasks
     task1 = create_test_task(db, job.job_id, failed_node.node_id, 1, TaskStatus.RUNNING)
     task2 = create_test_task(db, job.job_id, failed_node.node_id, 2, TaskStatus.ASSIGNED)
     task3 = create_test_task(db, job.job_id, failed_node.node_id, 3, TaskStatus.RUNNING)
     
-    # Create incident
     incident = Incident(
         incident_type="node_failure",
         severity="HIGH",
@@ -199,15 +185,12 @@ def test_recover_multiple_tasks():
     db.add(incident)
     db.commit()
     
-    # Run recovery
     recovery = RecoveryService(db)
     result = recovery.recover_from_node_failure(incident)
     
-    # Verify all tasks recovered
     assert result["status"] == "success"
     assert result["tasks_recovered"] == 3
     
-    # Verify all tasks reassigned
     db.refresh(task1)
     db.refresh(task2)
     db.refresh(task3)
@@ -223,7 +206,6 @@ def test_no_compatible_nodes():
     
     failed_node = create_test_node(db, "node-failed", NodeStatus.OFFLINE, is_healthy=False)
     
-    # No other nodes available
     
     job = create_test_job(db)
     task = create_test_task(db, job.job_id, failed_node.node_id, 1, TaskStatus.RUNNING)
@@ -242,11 +224,9 @@ def test_no_compatible_nodes():
     db.add(incident)
     db.commit()
     
-    # Run recovery
     recovery = RecoveryService(db)
     result = recovery.recover_from_node_failure(incident)
     
-    # Verify recovery failed
     assert result["status"] == "failed"
     assert result["tasks_recovered"] == 0
 
@@ -257,10 +237,8 @@ def test_compatibility_validation():
     
     failed_node = create_test_node(db, "node-failed", NodeStatus.OFFLINE, is_healthy=False, cpu=16, ram=32.0)
     
-    # Node with insufficient resources
     weak_node = create_test_node(db, "node-weak", cpu=2, ram=2.0)
     
-    # Job requires more resources than weak_node has
     job = Job(
         customer_id="test-customer",
         workload_type="frame_rendering",
@@ -292,11 +270,9 @@ def test_compatibility_validation():
     db.add(incident)
     db.commit()
     
-    # Run recovery
     recovery = RecoveryService(db)
     result = recovery.recover_from_node_failure(incident)
     
-    # Should fail due to incompatible resources
     assert result["status"] == "failed"
     assert result["tasks_recovered"] == 0
 
@@ -307,7 +283,6 @@ def test_reliability_threshold():
     
     failed_node = create_test_node(db, "node-failed", NodeStatus.OFFLINE, is_healthy=False)
     
-    # Node with low reliability
     unreliable_node = create_test_node(db, "node-unreliable", reliability=0.5)  # Below 0.7 threshold
     
     job = create_test_job(db)
@@ -327,11 +302,9 @@ def test_reliability_threshold():
     db.add(incident)
     db.commit()
     
-    # Run recovery
     recovery = RecoveryService(db)
     result = recovery.recover_from_node_failure(incident)
     
-    # Should fail due to low reliability
     assert result["status"] == "failed"
 
 
@@ -341,11 +314,9 @@ def test_budget_constraint():
     
     failed_node = create_test_node(db, "node-failed", NodeStatus.OFFLINE, is_healthy=False, cost=10.0)
     
-    # Expensive node
     expensive_node = create_test_node(db, "node-expensive", cost=1000.0)
     
-    # Job with small budget
-    job = create_test_job(db, budget=50.0)  # Only 5 CLSTR per task (50/10 frames)
+    job = create_test_job(db, budget=50.0)
     
     task = create_test_task(db, job.job_id, failed_node.node_id, 1, TaskStatus.RUNNING)
     
@@ -363,11 +334,9 @@ def test_budget_constraint():
     db.add(incident)
     db.commit()
     
-    # Run recovery
     recovery = RecoveryService(db)
     result = recovery.recover_from_node_failure(incident)
     
-    # Should fail due to budget constraint
     assert result["status"] == "failed"
 
 
@@ -377,7 +346,6 @@ def test_select_best_node():
     
     failed_node = create_test_node(db, "node-failed", NodeStatus.OFFLINE, is_healthy=False)
     
-    # Multiple candidate nodes with different characteristics
     node_reliable = create_test_node(db, "node-reliable", reliability=0.99, cost=20.0)
     node_cheap = create_test_node(db, "node-cheap", reliability=0.80, cost=5.0)
     node_balanced = create_test_node(db, "node-balanced", reliability=0.90, cost=10.0)
@@ -399,14 +367,11 @@ def test_select_best_node():
     db.add(incident)
     db.commit()
     
-    # Run recovery
     recovery = RecoveryService(db)
     result = recovery.recover_from_node_failure(incident)
     
-    # Should succeed
     assert result["status"] == "success"
     
-    # Verify task assigned to best node (likely node_reliable due to 40% reliability weight)
     db.refresh(task)
     assert task.node_id in [node_reliable.node_id, node_balanced.node_id]
 
@@ -426,20 +391,16 @@ def test_end_to_end_failure_recovery():
     """
     db = next(get_test_db())
     
-    # Step 1: Setup healthy cluster
     node_a = create_test_node(db, "node-a", cpu=8, ram=16.0)
     node_b = create_test_node(db, "node-b", cpu=8, ram=16.0)
     node_c = create_test_node(db, "node-c", cpu=8, ram=16.0)
     
-    # Step 2: Create job with tasks
     job = create_test_job(db)
     
-    # Node A has 3 tasks
     task1 = create_test_task(db, job.job_id, node_a.node_id, 1, TaskStatus.COMPLETED)
     task2 = create_test_task(db, job.job_id, node_a.node_id, 2, TaskStatus.RUNNING)
     task3 = create_test_task(db, job.job_id, node_a.node_id, 3, TaskStatus.ASSIGNED)
     
-    # Node B has 2 completed tasks
     task4 = create_test_task(db, job.job_id, node_b.node_id, 4, TaskStatus.COMPLETED)
     task5 = create_test_task(db, job.job_id, node_b.node_id, 5, TaskStatus.COMPLETED)
     
@@ -453,14 +414,12 @@ def test_end_to_end_failure_recovery():
     print(f"  Task 5: COMPLETED")
     print(f"Node C: {node_c.node_id} - AVAILABLE (idle)")
     
-    # Step 3: Node A fails (simulate heartbeat timeout)
     node_a.last_heartbeat_at = datetime.utcnow() - timedelta(seconds=60)
     db.commit()
     
     print("\n=== Node A Fails ===")
     print(f"Node A stopped sending heartbeats")
     
-    # Step 4: Failure detection
     detector = FailureDetector(db)
     failed_nodes = detector.detect_failed_nodes()
     
@@ -469,23 +428,19 @@ def test_end_to_end_failure_recovery():
     
     print(f"Failure detected: {len(failed_nodes)} node(s)")
     
-    # Mark node failed and create incident
     incident = detector.mark_node_failed(node_a, [task2, task3])
     
     print(f"Incident created: {incident.incident_id}")
     print(f"Incomplete tasks: {len([task2, task3])}")
     
-    # Verify node marked offline
     db.refresh(node_a)
     assert node_a.status == NodeStatus.OFFLINE
     assert node_a.is_healthy == False
     
-    # Verify incident created
     assert incident.incident_type == "node_failure"
     assert incident.status == IncidentStatus.OPEN
     assert len(incident.metadata["incomplete_task_ids"]) == 2
     
-    # Step 5: Automatic recovery
     print("\n=== Automatic Recovery ===")
     
     recovery = RecoveryService(db)
@@ -494,33 +449,29 @@ def test_end_to_end_failure_recovery():
     print(f"Recovery status: {result['status']}")
     print(f"Tasks recovered: {result['tasks_recovered']}")
     
-    # Verify recovery succeeded
     assert result["status"] == "success"
     assert result["tasks_recovered"] == 2
     
-    # Step 6: Verify tasks reassigned
     db.refresh(task2)
     db.refresh(task3)
     
     print(f"\nTask 2 reassigned: node-a → {task2.node_id}")
     print(f"Task 3 reassigned: node-a → {task3.node_id}")
     
-    assert task2.node_id != node_a.node_id  # Not on failed node
+    assert task2.node_id != node_a.node_id
     assert task3.node_id != node_a.node_id
-    assert task2.node_id in [node_b.node_id, node_c.node_id]  # On healthy node
+    assert task2.node_id in [node_b.node_id, node_c.node_id]
     assert task3.node_id in [node_b.node_id, node_c.node_id]
-    assert task2.status == TaskStatus.ASSIGNED  # Ready to execute
+    assert task2.status == TaskStatus.ASSIGNED
     assert task3.status == TaskStatus.ASSIGNED
-    assert task2.retry_count == 1  # Retry counter incremented
+    assert task2.retry_count == 1
     assert task3.retry_count == 1
     
-    # Step 7: Verify incident resolved
     db.refresh(incident)
     assert incident.status == IncidentStatus.RESOLVED
     
     print(f"\nIncident resolved: {incident.resolution}")
     
-    # Step 8: Simulate tasks completing on new nodes
     task2.status = TaskStatus.COMPLETED
     task3.status = TaskStatus.COMPLETED
     db.commit()
@@ -532,7 +483,6 @@ def test_end_to_end_failure_recovery():
     print(f"All tasks: COMPLETED")
     print(f"Job can continue to completion!")
     
-    # Verify all tasks completed
     all_tasks = [task1, task2, task3, task4, task5]
     for task in all_tasks:
         db.refresh(task)
@@ -568,15 +518,12 @@ def test_recovery_idempotent():
     
     recovery = RecoveryService(db)
     
-    # Run recovery multiple times
     result1 = recovery.recover_from_node_failure(incident)
     result2 = recovery.recover_from_node_failure(incident)
     result3 = recovery.recover_from_node_failure(incident)
     
-    # First should succeed
     assert result1["status"] == "success"
     
-    # Subsequent should skip (already resolved)
     assert result2["status"] == "already_resolved"
     assert result3["status"] == "already_resolved"
 

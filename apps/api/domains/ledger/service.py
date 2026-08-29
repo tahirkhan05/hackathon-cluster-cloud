@@ -38,12 +38,10 @@ class LedgerService:
         
         Sum all incoming transactions minus all outgoing transactions.
         """
-        # Sum credits (to_account = account_id)
         credits = db.query(func.sum(Transaction.amount_clstr)).filter(
             Transaction.to_account == account_id
         ).scalar() or Decimal(0)
         
-        # Sum debits (from_account = account_id)
         debits = db.query(func.sum(Transaction.amount_clstr)).filter(
             Transaction.from_account == account_id
         ).scalar() or Decimal(0)

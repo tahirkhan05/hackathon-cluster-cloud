@@ -210,7 +210,7 @@ export function ImpactAnalysisPanel({ nodeId, incidentId, onExecuteRecovery }: P
 
   return (
     <div className="space-y-4">
-      {/* Critical Incident Header */}
+      {}
       <Card className={`border-2 border-${urgencyColor}-300 shadow-lg`}>
         <CardHeader className={`bg-gradient-to-r from-${urgencyColor}-50 to-${urgencyColor}-100 border-b`}>
           <div className="flex items-center justify-between">
@@ -234,7 +234,7 @@ export function ImpactAnalysisPanel({ nodeId, incidentId, onExecuteRecovery }: P
         </CardHeader>
 
         <CardBody className="space-y-6">
-          {/* Current Impact */}
+          {}
           <div>
             <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <Activity className="w-5 h-5" />
@@ -262,7 +262,7 @@ export function ImpactAnalysisPanel({ nodeId, incidentId, onExecuteRecovery }: P
             </div>
           </div>
 
-          {/* Decision Window */}
+          {}
           <div className={`bg-${urgencyColor}-50 border-2 border-${urgencyColor}-300 rounded-lg p-4`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -287,14 +287,14 @@ export function ImpactAnalysisPanel({ nodeId, incidentId, onExecuteRecovery }: P
             )}
           </div>
 
-          {/* Scenarios Comparison */}
+          {}
           <div className="border-t pt-4">
             <h3 className="font-semibold text-gray-900 mb-4">
               IMPACT PROJECTION
             </h3>
 
             <div className="grid grid-cols-2 gap-6">
-              {/* Do Nothing */}
+              {}
               <div>
                 <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <XCircle className="w-4 h-4 text-red-500" />
@@ -328,7 +328,7 @@ export function ImpactAnalysisPanel({ nodeId, incidentId, onExecuteRecovery }: P
                 </div>
               </div>
 
-              {/* Recover Now */}
+              {}
               <div>
                 <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -363,7 +363,7 @@ export function ImpactAnalysisPanel({ nodeId, incidentId, onExecuteRecovery }: P
               </div>
             </div>
 
-            {/* Comparison Stats */}
+            {}
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-900 mb-3 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
@@ -392,7 +392,7 @@ export function ImpactAnalysisPanel({ nodeId, incidentId, onExecuteRecovery }: P
             </div>
           </div>
 
-          {/* AI Recommendation */}
+          {}
           {ai_explanation && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
@@ -419,7 +419,7 @@ export function ImpactAnalysisPanel({ nodeId, incidentId, onExecuteRecovery }: P
             </div>
           )}
 
-          {/* Action Button */}
+          {}
           <div className="pt-4 border-t">
             <Button
               onClick={executeRecovery}

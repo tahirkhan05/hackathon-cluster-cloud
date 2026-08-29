@@ -15,7 +15,6 @@ from domains.jobs.models import Job, JobStatus
 from domains.incidents.models import Incident, IncidentStatus
 from domains.nodes.failure_detector import FailureDetector
 
-# Test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_failure_detection.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -33,7 +32,6 @@ def get_test_db():
 def setup_database():
     Base.metadata.create_all(bind=engine)
     
-    # Seed workload type
     from domains.workloads.seed import seed_workload_types
     db = next(get_test_db())
     seed_workload_types(db)
@@ -107,19 +105,14 @@ def create_test_task(db, job_id: str, node_id: str, status: TaskStatus):
     return task
 
 
-# ============================================================================
-# FAILURE DETECTION TESTS
-# ============================================================================
 
 def test_detect_missed_heartbeat():
     """Test detection of node with missed heartbeat."""
     db = next(get_test_db())
     
-    # Create node with old heartbeat (beyond timeout)
     old_heartbeat = datetime.utcnow() - timedelta(seconds=60)
     node = create_test_node(db, "node-timeout", old_heartbeat)
     
-    # Run detection
     detector = FailureDetector(db)
     failed_nodes = detector.detect_failed_nodes()
     
@@ -131,18 +124,14 @@ def test_delayed_heartbeat_within_threshold():
     """Test that delayed but within-threshold heartbeat doesn't trigger failure."""
     db = next(get_test_db())
     
-    # Create node with recent heartbeat (within threshold)
-    recent_heartbeat = datetime.utcnow() - timedelta(seconds=20)  # Within 30s threshold
+    recent_heartbeat = datetime.utcnow() - timedelta(seconds=20)
     node = create_test_node(db, "node-ok", recent_heartbeat)
     
-    # Run detection
     detector = FailureDetector(db)
     failed_nodes = detector.detect_failed_nodes()
     
-    # Should not be detected as failed
     assert len(failed_nodes) == 0
     
-    # Node should still be available
     db.refresh(node)
     assert node.status == NodeStatus.AVAILABLE
     assert node.is_healthy == True
@@ -155,22 +144,18 @@ def test_mark_node_failed_creates_incident():
     old_heartbeat = datetime.utcnow() - timedelta(seconds=60)
     node = create_test_node(db, "node-fail", old_heartbeat)
     
-    # Create incomplete tasks
     job = create_test_job(db)
     task1 = create_test_task(db, job.job_id, node.node_id, TaskStatus.RUNNING)
     task2 = create_test_task(db, job.job_id, node.node_id, TaskStatus.ASSIGNED)
     
-    # Mark node failed
     detector = FailureDetector(db)
     incident = detector.mark_node_failed(node, [task1, task2])
     
-    # Verify node status
     db.refresh(node)
     assert node.status == NodeStatus.OFFLINE
     assert node.is_healthy == False
     assert node.failure_count == 1
     
-    # Verify incident
     assert incident is not None
     assert incident.incident_type == "node_failure"
     assert incident.node_id == node.node_id
@@ -189,16 +174,12 @@ def test_mark_node_failed_idempotent():
     
     detector = FailureDetector(db)
     
-    # Mark failed first time
     incident1 = detector.mark_node_failed(node, [])
     
-    # Mark failed again
     incident2 = detector.mark_node_failed(node, [])
     
-    # Should return same incident
     assert incident1.incident_id == incident2.incident_id
     
-    # Only one incident should exist
     incidents = db.query(Incident).filter(
         Incident.node_id == node.node_id,
         Incident.incident_type == "node_failure"
@@ -211,13 +192,11 @@ def test_detect_recovered_node():
     """Test detection of recovered node."""
     db = next(get_test_db())
     
-    # Create offline node
     recent_heartbeat = datetime.utcnow() - timedelta(seconds=5)
     node = create_test_node(db, "node-recover", recent_heartbeat, status=NodeStatus.OFFLINE)
     node.is_healthy = False
     db.commit()
     
-    # Run detection
     detector = FailureDetector(db)
     recovered_nodes = detector.detect_recovered_nodes()
     
@@ -229,13 +208,11 @@ def test_mark_node_recovered():
     """Test marking node as recovered."""
     db = next(get_test_db())
     
-    # Create offline node with incident
     recent_heartbeat = datetime.utcnow() - timedelta(seconds=5)
     node = create_test_node(db, "node-recover", recent_heartbeat, status=NodeStatus.OFFLINE)
     node.is_healthy = False
     db.commit()
     
-    # Create open incident
     incident = Incident(
         incident_type="node_failure",
         severity="MEDIUM",
@@ -246,16 +223,13 @@ def test_mark_node_recovered():
     db.add(incident)
     db.commit()
     
-    # Mark recovered
     detector = FailureDetector(db)
     resolved_incident = detector.mark_node_recovered(node)
     
-    # Verify node status
     db.refresh(node)
     assert node.status == NodeStatus.AVAILABLE
     assert node.is_healthy == True
     
-    # Verify incident resolved
     db.refresh(incident)
     assert incident.status == IncidentStatus.RESOLVED
     assert incident.resolved_at is not None
@@ -265,11 +239,9 @@ def test_recovery_grace_period():
     """Test recovery grace period prevents premature recovery."""
     db = next(get_test_db())
     
-    # Create offline node with very recent heartbeat (< grace period)
     very_recent = datetime.utcnow() - timedelta(seconds=2)
     node = create_test_node(db, "node-flapping", very_recent, status=NodeStatus.OFFLINE)
     
-    # Should not be considered recovered yet (grace period = 10s)
     detector = FailureDetector(db)
     recovered_nodes = detector.detect_recovered_nodes()
     
@@ -283,12 +255,10 @@ def test_stale_task_detection():
     node = create_test_node(db, "node-1", datetime.utcnow())
     job = create_test_job(db)
     
-    # Create task that's been running too long
     task = create_test_task(db, job.job_id, node.node_id, TaskStatus.RUNNING)
-    task.started_at = datetime.utcnow() - timedelta(seconds=400)  # Longer than 300s timeout
+    task.started_at = datetime.utcnow() - timedelta(seconds=400)
     db.commit()
     
-    # Detect stale tasks
     detector = FailureDetector(db)
     stale_tasks = detector.check_for_stale_tasks(task_timeout_seconds=300)
     
@@ -307,7 +277,6 @@ def test_stale_task_incident_creation():
     task.started_at = datetime.utcnow() - timedelta(seconds=400)
     db.commit()
     
-    # Create incident
     detector = FailureDetector(db)
     incident = detector.create_stale_task_incident(task)
     
@@ -330,11 +299,9 @@ def test_stale_task_incident_idempotent():
     
     detector = FailureDetector(db)
     
-    # Create incident twice
     incident1 = detector.create_stale_task_incident(task)
     incident2 = detector.create_stale_task_incident(task)
     
-    # Should be same incident
     assert incident1.incident_id == incident2.incident_id
 
 
@@ -344,7 +311,6 @@ def test_full_detection_cycle():
     
     now = datetime.utcnow()
     
-    # Create failed node
     failed_node = create_test_node(
         db, "node-failed",
         now - timedelta(seconds=60),
@@ -354,7 +320,6 @@ def test_full_detection_cycle():
     job = create_test_job(db)
     task = create_test_task(db, job.job_id, failed_node.node_id, TaskStatus.RUNNING)
     
-    # Create recovered node
     recovered_node = create_test_node(
         db, "node-recovered",
         now - timedelta(seconds=5),
@@ -363,7 +328,6 @@ def test_full_detection_cycle():
     recovered_node.is_healthy = False
     db.commit()
     
-    # Create open incident for recovered node
     old_incident = Incident(
         incident_type="node_failure",
         severity="MEDIUM",
@@ -374,17 +338,14 @@ def test_full_detection_cycle():
     db.add(old_incident)
     db.commit()
     
-    # Run detection cycle
     detector = FailureDetector(db)
     summary = detector.run_detection_cycle()
     
-    # Verify summary
     assert summary["nodes_failed"] == 1
     assert summary["nodes_recovered"] == 1
     assert summary["incidents_created"] == 1
     assert summary["incidents_resolved"] == 1
     
-    # Verify node states
     db.refresh(failed_node)
     assert failed_node.status == NodeStatus.OFFLINE
     assert failed_node.is_healthy == False
@@ -398,19 +359,15 @@ def test_no_false_positives():
     """Test that healthy nodes are not flagged as failed."""
     db = next(get_test_db())
     
-    # Create healthy nodes
     node1 = create_test_node(db, "node-1", datetime.utcnow())
     node2 = create_test_node(db, "node-2", datetime.utcnow() - timedelta(seconds=10))
     node3 = create_test_node(db, "node-3", datetime.utcnow() - timedelta(seconds=25))
     
-    # Run detection
     detector = FailureDetector(db)
     failed_nodes = detector.detect_failed_nodes()
     
-    # No nodes should be flagged
     assert len(failed_nodes) == 0
     
-    # Run full cycle
     summary = detector.run_detection_cycle()
     
     assert summary["nodes_failed"] == 0
@@ -423,16 +380,13 @@ def test_only_available_busy_nodes_detected():
     
     old_time = datetime.utcnow() - timedelta(seconds=60)
     
-    # Create nodes with old heartbeat but different statuses
     node_available = create_test_node(db, "node-avail", old_time, NodeStatus.AVAILABLE)
     node_busy = create_test_node(db, "node-busy", old_time, NodeStatus.BUSY)
     node_offline = create_test_node(db, "node-offline", old_time, NodeStatus.OFFLINE)
     
-    # Run detection
     detector = FailureDetector(db)
     failed_nodes = detector.detect_failed_nodes()
     
-    # Only AVAILABLE and BUSY should be detected
     failed_node_ids = [node.node_id for node, _ in failed_nodes]
     
     assert node_available.node_id in failed_node_ids
@@ -448,7 +402,6 @@ def test_identify_incomplete_tasks():
     node = create_test_node(db, "node-fail", datetime.utcnow() - timedelta(seconds=60))
     job = create_test_job(db)
     
-    # Create tasks in various states
     task_assigned = create_test_task(db, job.job_id, node.node_id, TaskStatus.ASSIGNED)
     task_running = create_test_task(db, job.job_id, node.node_id, TaskStatus.RUNNING)
     
@@ -462,11 +415,9 @@ def test_identify_incomplete_tasks():
     db.add(task_completed)
     db.commit()
     
-    # Get incomplete tasks
     detector = FailureDetector(db)
     incomplete = detector._get_incomplete_tasks(node.node_id)
     
-    # Only ASSIGNED and RUNNING should be incomplete
     incomplete_ids = [t.task_id for t in incomplete]
     
     assert task_assigned.task_id in incomplete_ids
@@ -484,23 +435,19 @@ def test_detection_cycle_idempotent():
     
     detector = FailureDetector(db)
     
-    # Run cycle multiple times
     summary1 = detector.run_detection_cycle()
     summary2 = detector.run_detection_cycle()
     summary3 = detector.run_detection_cycle()
     
-    # First should detect failure
     assert summary1["nodes_failed"] == 1
     assert summary1["incidents_created"] == 1
     
-    # Subsequent runs should not create duplicates
     assert summary2["nodes_failed"] == 0
     assert summary2["incidents_created"] == 0
     
     assert summary3["nodes_failed"] == 0
     assert summary3["incidents_created"] == 0
     
-    # Only one incident should exist
     incidents = db.query(Incident).filter(
         Incident.node_id == node.node_id
     ).all()

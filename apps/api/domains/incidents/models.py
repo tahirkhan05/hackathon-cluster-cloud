@@ -40,29 +40,23 @@ class Incident(Base):
     task_id = Column(String, ForeignKey("tasks.task_id"), nullable=True, index=True)
     node_id = Column(String, ForeignKey("nodes.node_id"), nullable=False, index=True)
     
-    # Incident classification
     incident_type = Column(SQLEnum(IncidentType), nullable=False)
     status = Column(SQLEnum(IncidentStatus), default=IncidentStatus.DETECTED, index=True)
     
-    # Description and context
     description = Column(Text, nullable=True)
     context = Column(JSON, nullable=True)
     
-    # Recovery information
     recovery_node_id = Column(String, ForeignKey("nodes.node_id"), nullable=True)
     recovery_strategy = Column(String, nullable=True)
     ai_recovery_recommendation = Column(JSON, nullable=True)
     
-    # Affected tasks
-    affected_task_ids = Column(JSON, nullable=True)  # List of task IDs
+    affected_task_ids = Column(JSON, nullable=True)
     reassigned_task_count = Column(Integer, default=0)
     
-    # Timing
     detected_at = Column(DateTime, default=datetime.utcnow, index=True)
     recovery_started_at = Column(DateTime, nullable=True)
     resolved_at = Column(DateTime, nullable=True)
     
-    # Relationships
     job = relationship("Job", back_populates="incidents")
     task = relationship("Task", back_populates="incidents")
     node = relationship("Node", back_populates="incidents", foreign_keys=[node_id])

@@ -104,7 +104,6 @@ What are the optimal resource requirements?"""
         
         errors = []
         
-        # Check required fields
         required_fields = ["cpu_cores_min", "ram_gb_min", "gpu_required"]
         for field in required_fields:
             if field not in recommendation:
@@ -113,7 +112,6 @@ What are the optimal resource requirements?"""
         if errors:
             return False, {}, errors
         
-        # Validate ranges
         if recommendation["cpu_cores_min"] < 1 or recommendation["cpu_cores_min"] > 128:
             errors.append("cpu_cores_min must be between 1 and 128")
         
@@ -135,14 +133,12 @@ What are the optimal resource requirements?"""
         workload_type = context["workload_type"]
         
         if workload_type == "frame_rendering":
-            # Extract parameters
             frame_count = params.get("frame_count", 100)
             width = params.get("width", 1920)
             height = params.get("height", 1080)
             complexity = params.get("complexity", "medium")
             
-            # Deterministic rules
-            resolution_factor = (width * height) / (1920 * 1080)  # Normalized to 1080p
+            resolution_factor = (width * height) / (1920 * 1080)
             
             complexity_multipliers = {
                 "low": 0.5,
@@ -151,19 +147,15 @@ What are the optimal resource requirements?"""
             }
             complexity_mult = complexity_multipliers.get(complexity, 1.0)
             
-            # Base requirements
             cpu_cores = max(2, int(4 * resolution_factor))
             ram_gb = max(4, int(8 * resolution_factor))
             
-            # GPU recommended for high resolution or high complexity
             gpu_required = resolution_factor > 1.5 or complexity == "high"
             gpu_vram_gb = int(4 * resolution_factor) if gpu_required else None
             
-            # Time estimation
-            base_time_per_frame = 3  # seconds
+            base_time_per_frame = 3
             estimated_time = base_time_per_frame * complexity_mult * resolution_factor
             
-            # Cost estimation (assume $10 per task average)
             estimated_cost = frame_count * 10
             
             return {
@@ -178,7 +170,6 @@ What are the optimal resource requirements?"""
                 "fallback": True
             }
         
-        # Generic fallback
         return {
             "cpu_cores_min": 4,
             "ram_gb_min": 8,

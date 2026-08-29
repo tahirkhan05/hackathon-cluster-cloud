@@ -24,7 +24,6 @@ export function useWebSocketConnection() {
   useEffect(() => {
     client.connect();
 
-    // Ping every 30 seconds to keep connection alive
     const pingInterval = setInterval(() => {
       if (client.isConnected()) {
         client.ping();
@@ -49,7 +48,6 @@ export function useRealtimeEvent(
   const client = getWebSocketClient();
   const handlerRef = useRef(handler);
 
-  // Update handler ref when it changes
   useEffect(() => {
     handlerRef.current = handler;
   }, [handler]);
@@ -107,7 +105,6 @@ export function useEntityEvents(entityId: string, entityType: 'job' | 'node' | '
   const handleEvent = useCallback((event: RealtimeEvent) => {
     const data = event.data;
     
-    // Check if event relates to this entity
     const isRelated = 
       (entityType === 'job' && data.job_id === entityId) ||
       (entityType === 'node' && data.node_id === entityId) ||

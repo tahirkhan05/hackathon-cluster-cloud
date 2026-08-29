@@ -26,11 +26,10 @@ class DecisionWindow:
     - Deadline proximity
     """
     
-    # Constants for window calculation
-    BASE_WINDOW_SECONDS = 120  # 2 minutes base window
-    TASK_TIMEOUT_SECONDS = 180  # 3 minutes until task timeout
-    CAPACITY_FACTOR = 30  # Seconds per available node
-    DEADLINE_URGENCY_FACTOR = 0.5  # Reduce window if deadline close
+    BASE_WINDOW_SECONDS = 120
+    TASK_TIMEOUT_SECONDS = 180
+    CAPACITY_FACTOR = 30
+    DEADLINE_URGENCY_FACTOR = 0.5
     
     def __init__(self, db: Session):
         self.db = db
@@ -50,45 +49,34 @@ class DecisionWindow:
         Returns:
             Decision window details with urgency level
         """
-        # Base window
         window_seconds = self.BASE_WINDOW_SECONDS
         
-        # Factor 1: Number of affected tasks
         task_count = len(affected_task_ids)
         if task_count > 10:
-            # More tasks = less time to decide
             window_seconds *= 0.7
         elif task_count > 5:
             window_seconds *= 0.85
         
-        # Factor 2: Available replacement capacity
         available_nodes = self._count_available_nodes(exclude_node_id=node_id)
         
         if available_nodes == 0:
-            # No capacity = urgent decision needed
             window_seconds *= 0.3
             urgency_reason = "No replacement nodes available"
         elif available_nodes < task_count:
-            # Limited capacity
             window_seconds *= 0.6
             urgency_reason = "Limited replacement capacity"
         else:
-            # Sufficient capacity
             urgency_reason = "Adequate replacement capacity available"
         
-        # Factor 3: Deadline proximity
         deadline_risk = self._check_deadline_proximity(affected_task_ids)
         if deadline_risk:
             window_seconds *= self.DEADLINE_URGENCY_FACTOR
             urgency_reason = deadline_risk
         
-        # Factor 4: Task timeout risk
-        # If tasks will timeout soon, reduce window
         time_until_timeout = self.TASK_TIMEOUT_SECONDS
         if window_seconds > time_until_timeout * 0.7:
             window_seconds = time_until_timeout * 0.7
         
-        # Calculate urgency level
         if window_seconds < 60:
             urgency_level = "CRITICAL"
         elif window_seconds < 90:
@@ -98,7 +86,6 @@ class DecisionWindow:
         else:
             urgency_level = "LOW"
         
-        # Calculate consequences after window
         after_window_impact = self._calculate_post_window_impact(
             task_count,
             available_nodes
@@ -127,7 +114,6 @@ class DecisionWindow:
                 "urgency_reason": "Non-node incident"
             }
         
-        # Get affected tasks from incident metadata
         affected_task_ids = incident.metadata.get("incomplete_task_ids", []) if incident.metadata else []
         
         return self.calculate_for_node_failure(
@@ -159,7 +145,6 @@ class DecisionWindow:
         if not task_ids:
             return None
         
-        # Get jobs for these tasks
         tasks = self.db.query(Task).filter(Task.task_id.in_(task_ids)).all()
         
         from domains.jobs.models import Job
@@ -174,11 +159,9 @@ class DecisionWindow:
             if not deadline_minutes:
                 continue
             
-            # Calculate time remaining
             elapsed = (datetime.utcnow() - job.created_at).total_seconds() / 60.0
             remaining = deadline_minutes - elapsed
             
-            # If less than 20% of deadline remaining, it's urgent
             if remaining < deadline_minutes * 0.2:
                 return f"Job deadline in {int(remaining)} minutes"
         

@@ -37,7 +37,6 @@ class BedrockClient:
         try:
             import boto3
             
-            # Initialize bedrock runtime client
             session_kwargs = {
                 "region_name": aws_region
             }
@@ -87,7 +86,6 @@ class BedrockClient:
             return None
         
         try:
-            # Construct request payload
             request_body = {
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": max_tokens,
@@ -101,16 +99,13 @@ class BedrockClient:
                 ]
             }
             
-            # Invoke model
             response = self.client.invoke_model(
                 modelId=self.model_id,
                 body=json.dumps(request_body)
             )
             
-            # Parse response
             response_body = json.loads(response['body'].read())
             
-            # Extract text from response
             if "content" in response_body and len(response_body["content"]) > 0:
                 return response_body["content"][0]["text"]
             
@@ -140,25 +135,21 @@ class BedrockClient:
         Returns:
             Parsed JSON dict, or None if failed
         """
-        # Add JSON formatting instruction
         enhanced_system = f"{system_prompt}\n\nRespond ONLY with valid JSON matching this schema: {json.dumps(response_schema)}"
         
         response_text = self.invoke(
             system_prompt=enhanced_system,
             user_message=user_message,
             max_tokens=max_tokens,
-            temperature=0.3  # Lower temperature for structured output
+            temperature=0.3
         )
         
         if not response_text:
             return None
         
-        # Parse JSON from response
         try:
-            # Try to find JSON in response (handle markdown code blocks)
             text = response_text.strip()
             
-            # Remove markdown code blocks if present
             if text.startswith("```json"):
                 text = text[7:]
             elif text.startswith("```"):
@@ -169,7 +160,6 @@ class BedrockClient:
             
             text = text.strip()
             
-            # Parse JSON
             parsed = json.loads(text)
             return parsed
             
@@ -179,7 +169,6 @@ class BedrockClient:
             return None
 
 
-# Global singleton instance (lazy initialized)
 _bedrock_client: Optional[BedrockClient] = None
 
 

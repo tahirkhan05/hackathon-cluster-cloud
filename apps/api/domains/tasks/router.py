@@ -39,7 +39,6 @@ def poll_for_task(payload: Dict[str, Any] = Body(...), db: Session = Depends(get
     if not node_id:
         raise HTTPException(status_code=400, detail="node_id required")
     
-    # Get node's next assigned task
     task = TaskService.get_next_task_for_node(db, node_id)
     
     if not task:
@@ -127,7 +126,6 @@ def list_tasks(
     if job_id:
         tasks = TaskService.list_tasks_for_job(db, job_id, status=status)
     elif status:
-        # This would need a different service method for global status filtering
         raise HTTPException(status_code=400, detail="Must specify job_id when filtering by status")
     else:
         tasks = TaskService.get_pending_tasks(db, limit=100)

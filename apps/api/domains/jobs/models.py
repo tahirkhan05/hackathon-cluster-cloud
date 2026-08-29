@@ -31,7 +31,6 @@ class JobStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
-# Valid job state transitions
 JOB_TRANSITIONS = {
     JobStatus.SUBMITTED: [JobStatus.ANALYZING, JobStatus.CANCELLED],
     JobStatus.ANALYZING: [JobStatus.SCHEDULING, JobStatus.FAILED, JobStatus.CANCELLED],
@@ -39,9 +38,9 @@ JOB_TRANSITIONS = {
     JobStatus.ALLOCATED: [JobStatus.RUNNING, JobStatus.FAILED, JobStatus.CANCELLED],
     JobStatus.RUNNING: [JobStatus.COMPLETED, JobStatus.RECOVERING, JobStatus.FAILED, JobStatus.CANCELLED],
     JobStatus.RECOVERING: [JobStatus.RUNNING, JobStatus.FAILED, JobStatus.CANCELLED],
-    JobStatus.COMPLETED: [],  # Terminal state
-    JobStatus.FAILED: [],  # Terminal state
-    JobStatus.CANCELLED: [],  # Terminal state
+    JobStatus.COMPLETED: [],
+    JobStatus.FAILED: [],
+    JobStatus.CANCELLED: [],
 }
 
 
@@ -59,30 +58,23 @@ class Job(Base):
     workload_type = Column(String, ForeignKey("workload_types.workload_type"), nullable=False)
     status = Column(SQLEnum(JobStatus), default=JobStatus.SUBMITTED, index=True)
     
-    # Job parameters (frame_count, resolution, quality, etc.)
     parameters = Column(JSON, nullable=False)
     
-    # AI analysis result (Phase 4)
     ai_analysis = Column(JSON, nullable=True)
     
-    # Timing
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     
-    # Economics
     budget_clstr = Column(Numeric(10, 2), nullable=False)
     total_cost_clstr = Column(Numeric(10, 2), nullable=True)
     
-    # Progress tracking
     total_tasks = Column(Integer, default=0)
     completed_tasks = Column(Integer, default=0)
     failed_tasks = Column(Integer, default=0)
     
-    # Error information
     error_message = Column(Text, nullable=True)
     
-    # Relationships
     workload = relationship("WorkloadType", back_populates="jobs")
     tasks = relationship("Task", back_populates="job", cascade="all, delete-orphan")
     incidents = relationship("Incident", back_populates="job")

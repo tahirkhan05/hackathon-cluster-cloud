@@ -33,10 +33,9 @@ async def register_node(
     try:
         node = NodeService.register_node(db, node_data)
         
-        # Broadcast node joined event
         event = EventFactory.node_joined(
             node_id=node.node_id,
-            name=node.name,
+            name=node.provider_id,
             cpu_cores=node.cpu_cores,
             total_ram_gb=node.total_ram_gb,
             gpu_info=node.gpu_info
@@ -66,7 +65,6 @@ async def node_heartbeat(
     try:
         result = NodeService.process_heartbeat(db, node_id, heartbeat)
         
-        # Broadcast heartbeat event (only for status changes to reduce noise)
         node = db.query(NodeService.model).filter_by(node_id=node_id).first()
         if node and node.status != NodeStatus.HEALTHY:
             event = EventFactory.node_heartbeat(

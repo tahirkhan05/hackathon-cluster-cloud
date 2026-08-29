@@ -119,7 +119,6 @@ class APIClient {
     return response.json();
   }
 
-  // Nodes
   async getNodes(): Promise<Node[]> {
     return this.request<Node[]>('/api/nodes');
   }
@@ -128,7 +127,6 @@ class APIClient {
     return this.request<Node>(`/api/nodes/${nodeId}`);
   }
 
-  // Jobs
   async getJobs(): Promise<Job[]> {
     return this.request<Job[]>('/api/jobs');
   }
@@ -144,12 +142,10 @@ class APIClient {
     });
   }
 
-  // Tasks
   async getJobTasks(jobId: string): Promise<Task[]> {
     return this.request<Task[]>(`/api/jobs/${jobId}/tasks`);
   }
 
-  // Incidents
   async getIncidents(): Promise<Incident[]> {
     return this.request<Incident[]>('/api/incidents');
   }
@@ -158,7 +154,6 @@ class APIClient {
     return this.request<Incident[]>(`/api/incidents?job_id=${jobId}`);
   }
 
-  // Economics
   async getBalance(account: string): Promise<{ balance: number }> {
     return this.request<{ balance: number }>(`/api/ledger/balance/${account}`);
   }
@@ -168,7 +163,6 @@ class APIClient {
     return this.request<Transaction[]>(`/api/ledger/transactions${query}`);
   }
 
-  // AI Recommendations
   async getSchedulingRecommendation(
     requirements: WorkloadRequirements
   ): Promise<SchedulingRecommendation> {
@@ -178,7 +172,6 @@ class APIClient {
     });
   }
 
-  // System Stats
   async getSystemStats(): Promise<{
     total_nodes: number;
     healthy_nodes: number;

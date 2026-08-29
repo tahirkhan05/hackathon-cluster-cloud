@@ -5,7 +5,7 @@ import { Zap, Server, Shield, TrendingUp, ArrowRight } from 'lucide-react';
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50">
-      {/* Header */}
+      {}
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -24,7 +24,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {}
       <section className="max-w-7xl mx-auto px-6 py-24">
         <div className="text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium mb-8">
@@ -59,7 +59,7 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Stats */}
+          {}
           <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
             <div>
               <div className="text-3xl font-bold text-gray-900 mb-1">10x</div>
@@ -79,7 +79,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
+      {}
       <section className="max-w-7xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -91,7 +91,7 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Step 1 */}
+          {}
           <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
             <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
               <span className="text-2xl font-bold text-primary-600">1</span>
@@ -105,7 +105,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Step 2 */}
+          {}
           <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
             <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
               <span className="text-2xl font-bold text-primary-600">2</span>
@@ -119,7 +119,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Step 3 */}
+          {}
           <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
             <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
               <span className="text-2xl font-bold text-primary-600">3</span>
@@ -135,7 +135,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Benefits */}
+      {}
       <section className="max-w-7xl mx-auto px-6 py-24">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
@@ -216,7 +216,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
+      {}
       <section className="max-w-7xl mx-auto px-6 py-24">
         <div className="bg-gradient-to-r from-primary-600 to-purple-600 rounded-3xl p-12 text-center text-white">
           <h2 className="text-4xl font-bold mb-4">
@@ -234,7 +234,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
+      {}
       <footer className="border-t border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex items-center justify-between">

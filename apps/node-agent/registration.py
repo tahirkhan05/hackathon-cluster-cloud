@@ -83,7 +83,6 @@ class RegistrationManager:
             except Exception as e:
                 logger.error(f"Registration error: {e}", exc_info=True)
             
-            # Wait before retry with exponential backoff
             if attempt < max_retries:
                 delay = retry_delay * (2 ** (attempt - 1))
                 logger.info(f"Retrying in {delay}s...")

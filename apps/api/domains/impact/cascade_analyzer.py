@@ -65,7 +65,6 @@ class CascadeAnalyzer:
         """
         impact = CascadeImpact()
         
-        # Step 1: Get node
         node = self.db.query(Node).filter_by(node_id=node_id).first()
         if not node:
             logger.warning(f"Node {node_id} not found")
@@ -73,14 +72,13 @@ class CascadeAnalyzer:
         
         impact.affected_node = {
             "node_id": node.node_id,
-            "name": node.name,
+            "name": node.provider_id,
             "provider_id": node.provider_id,
             "status": node.status.value,
             "is_healthy": node.is_healthy,
             "current_task_count": node.current_task_count
         }
         
-        # Step 2: Find affected tasks
         affected_tasks = self.db.query(Task).filter(
             Task.assigned_node_id == node_id,
             Task.status.in_([TaskStatus.ASSIGNED, TaskStatus.RUNNING])
@@ -90,20 +88,17 @@ class CascadeAnalyzer:
             logger.info(f"No active tasks on node {node_id}")
             return impact
         
-        # Build cascade chain entry
         impact.cascade_chain.append({
             "step": "node_failure",
-            "description": f"Node {node.name} failed",
+            "description": f"Node {node.provider_id} failed",
             "timestamp": datetime.utcnow().isoformat(),
             "affected_count": len(affected_tasks)
         })
         
-        # Step 3: Analyze affected tasks
         total_estimated_time = 0.0
         job_ids = set()
         
         for task in affected_tasks:
-            # Estimate task completion time based on workload
             estimated_minutes = self._estimate_task_duration(task)
             total_estimated_time += estimated_minutes
             
@@ -127,17 +122,14 @@ class CascadeAnalyzer:
             "estimated_delay_minutes": total_estimated_time
         })
         
-        # Step 4: Analyze affected jobs
         for job_id in job_ids:
             job = self.db.query(Job).filter_by(job_id=job_id).first()
             if not job:
                 continue
             
-            # Calculate job-level impact
             job_impact = self._analyze_job_impact(job, affected_tasks)
             impact.affected_jobs.append(job_impact)
             
-            # Check deadline risk
             deadline_minutes = job.parameters.get("deadline_minutes")
             if deadline_minutes:
                 deadline_risk = self._assess_deadline_risk(
@@ -148,7 +140,6 @@ class CascadeAnalyzer:
                 if deadline_risk:
                     impact.deadline_risks.append(deadline_risk)
             
-            # Customer impact
             customer_impact = self._assess_customer_impact(job, job_impact)
             if customer_impact:
                 impact.customer_impacts.append(customer_impact)
@@ -191,7 +182,6 @@ class CascadeAnalyzer:
         if incident.node_id:
             return self.analyze_node_failure(incident.node_id)
         
-        # For other incident types, build minimal impact
         impact = CascadeImpact()
         
         if incident.task_id:
@@ -211,17 +201,14 @@ class CascadeAnalyzer:
         
         Based on workload parameters and complexity.
         """
-        # Default estimate
         base_minutes = 5.0
         
-        # Adjust based on resolution
         resolution = task.parameters.get("resolution", "1920x1080")
         if "2560" in resolution or "4K" in resolution:
             base_minutes *= 1.5
         elif "3840" in resolution or "8K" in resolution:
             base_minutes *= 2.0
         
-        # Adjust based on complexity
         complexity = task.parameters.get("complexity", "medium")
         if complexity == "high":
             base_minutes *= 1.3
@@ -267,18 +254,14 @@ class CascadeAnalyzer:
         if not job.created_at:
             return None
         
-        # Calculate elapsed time
         elapsed = (datetime.utcnow() - job.created_at).total_seconds() / 60.0
         
-        # Calculate remaining time budget
         remaining_minutes = deadline_minutes - elapsed
         
-        # Estimate time needed (remaining tasks * avg time)
         remaining_tasks = job.total_tasks - job.completed_tasks
-        avg_task_minutes = 5.0  # Default estimate
+        avg_task_minutes = 5.0
         estimated_remaining = remaining_tasks * avg_task_minutes + estimated_delay_minutes
         
-        # Check if at risk
         if estimated_remaining > remaining_minutes:
             slack_minutes = remaining_minutes - estimated_remaining
             
@@ -301,7 +284,6 @@ class CascadeAnalyzer:
         job_impact: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Assess customer-level impact."""
-        # Consider significant if >20% of job affected
         if job_impact["affected_percentage"] > 20:
             return {
                 "customer_id": job.customer_id,

@@ -16,16 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseAgent(ABC):
-    """
-    Base class for AI agents.
-    
-    Enforces pattern:
-    1. Gather context
-    2. Call AI (if available)
-    3. Validate recommendation
-    4. Fallback to deterministic if needed
-    5. Record decision
-    """
+    """Base class for AI agents with validation and fallback support."""
     
     agent_name: str = "BaseAgent"
     agent_version: str = "1.0"
@@ -36,45 +27,22 @@ class BaseAgent(ABC):
     
     @abstractmethod
     def gather_context(self, **kwargs) -> Dict[str, Any]:
-        """
-        Gather structured context for AI.
-        
-        Returns:
-            Dict with all relevant data for AI decision
-        """
+        """Gather structured context for AI decision."""
         pass
     
     @abstractmethod
     def get_system_prompt(self) -> str:
-        """
-        Get system prompt for this agent.
-        
-        Returns:
-            System prompt describing agent's role and constraints
-        """
+        """Get system prompt describing agent's role and constraints."""
         pass
     
     @abstractmethod
     def format_user_message(self, context: Dict[str, Any]) -> str:
-        """
-        Format context into user message for AI.
-        
-        Args:
-            context: Structured context from gather_context()
-            
-        Returns:
-            Formatted message for AI
-        """
+        """Format context into user message for AI."""
         pass
     
     @abstractmethod
     def get_response_schema(self) -> Dict[str, Any]:
-        """
-        Get expected JSON schema for AI response.
-        
-        Returns:
-            JSON schema dict
-        """
+        """Get expected JSON schema for AI response."""
         pass
     
     @abstractmethod
@@ -83,16 +51,7 @@ class BaseAgent(ABC):
         recommendation: Dict[str, Any],
         context: Dict[str, Any]
     ) -> Tuple[bool, Dict[str, Any], Optional[list]]:
-        """
-        Validate AI recommendation against constraints.
-        
-        Args:
-            recommendation: AI's recommendation
-            context: Original context
-            
-        Returns:
-            (is_valid, validation_result, errors)
-        """
+        """Validate AI recommendation against constraints. Returns (is_valid, result, errors)."""
         pass
     
     @abstractmethod
@@ -100,15 +59,7 @@ class BaseAgent(ABC):
         self,
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Deterministic fallback when AI unavailable or validation fails.
-        
-        Args:
-            context: Original context
-            
-        Returns:
-            Deterministic recommendation
-        """
+        """Deterministic fallback when AI unavailable or validation fails."""
         pass
     
     def recommend(
@@ -117,23 +68,11 @@ class BaseAgent(ABC):
         request_context_type: str,
         **kwargs
     ) -> Tuple[Dict[str, Any], AgentRecommendation]:
-        """
-        Main recommendation flow.
-        
-        Args:
-            request_context_id: ID of request (job_id, incident_id, etc.)
-            request_context_type: Type of request
-            **kwargs: Arguments for gather_context()
-            
-        Returns:
-            (final_recommendation, tracking_record)
-        """
+        """Main recommendation flow. Returns (final_recommendation, tracking_record)."""
         logger.info(f"[{self.agent_name}] Processing request: {request_context_id}")
         
-        # Step 1: Gather context
         context = self.gather_context(**kwargs)
         
-        # Step 2: Try AI recommendation
         ai_recommendation = None
         reasoning = None
         confidence = None
@@ -165,39 +104,34 @@ class BaseAgent(ABC):
                     f"(confidence: {confidence}, time: {response_time_ms:.0f}ms)"
                 )
         
-        # Step 3: Validate recommendation
         if ai_recommendation:
             is_valid, validation_result, errors = self.validate_recommendation(
                 ai_recommendation, context
             )
             
             if is_valid:
-                # AI recommendation accepted
                 final_recommendation = ai_recommendation
                 action_taken = "accepted"
                 selected_alternative = None
                 
                 logger.info(f"[{self.agent_name}] AI recommendation accepted")
             else:
-                # Validation failed, use fallback
                 logger.warning(
                     f"[{self.agent_name}] AI recommendation failed validation: {errors}"
                 )
                 final_recommendation = self.deterministic_fallback(context)
                 action_taken = "fallback"
                 selected_alternative = final_recommendation
-                is_valid = False  # Mark as not validated (used fallback)
+                is_valid = False
         else:
-            # No AI response, use fallback
             logger.info(f"[{self.agent_name}] Using deterministic fallback")
             final_recommendation = self.deterministic_fallback(context)
             action_taken = "fallback"
             selected_alternative = final_recommendation
-            is_valid = True  # Fallback is always valid
+            is_valid = True
             validation_result = {"fallback": True}
             errors = None
         
-        # Step 4: Record decision
         record = AgentRecommendation(
             agent_name=self.agent_name,
             agent_version=self.agent_version,

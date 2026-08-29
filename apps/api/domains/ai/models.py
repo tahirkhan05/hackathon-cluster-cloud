@@ -20,35 +20,28 @@ class AgentRecommendation(Base):
     """
     __tablename__ = "agent_recommendations"
     
-    # Identity
     recommendation_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     
-    # Agent identification
     agent_name = Column(String(100), nullable=False, index=True)
     agent_version = Column(String(20), default="1.0")
     
-    # Context
-    request_context_id = Column(String(100), index=True)  # job_id, incident_id, etc.
-    request_context_type = Column(String(50))  # "job", "incident", "node_failure", etc.
+    request_context_id = Column(String(100), index=True)
+    request_context_type = Column(String(50))
     
-    # AI Input/Output
-    input_data = Column(JSON)  # Structured context sent to AI
-    recommendation = Column(JSON, nullable=False)  # AI's recommendation
-    reasoning = Column(Text)  # AI's explanation (if provided)
-    confidence = Column(Float)  # 0.0-1.0 if AI provides confidence
+    input_data = Column(JSON)
+    recommendation = Column(JSON, nullable=False)
+    reasoning = Column(Text)
+    confidence = Column(Float)
     
-    # Validation
     validation_passed = Column(Boolean, nullable=False)
-    validation_result = Column(JSON)  # Detailed validation results
-    validation_errors = Column(JSON)  # List of validation errors if failed
+    validation_result = Column(JSON)
+    validation_errors = Column(JSON)
     
-    # Action taken
-    action_taken = Column(String(100))  # "accepted", "rejected", "fallback"
-    selected_alternative = Column(JSON)  # If fallback used instead
+    action_taken = Column(String(100))
+    selected_alternative = Column(JSON)
     
-    # Metadata
     bedrock_available = Column(Boolean, default=True)
-    response_time_ms = Column(Float)  # Time taken for AI response
+    response_time_ms = Column(Float)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     
     def __repr__(self):

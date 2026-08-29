@@ -27,24 +27,20 @@ class TaskService:
         - Job exists
         - Task number is unique within job
         """
-        # Validate job exists
         job = db.query(Job).filter(Job.job_id == task_data.job_id).first()
         
         if not job:
             raise ValueError(f"Job not found: {task_data.job_id}")
         
-        # Check for duplicate task number
         existing = db.query(Task).filter(
             Task.job_id == task_data.job_id,
             Task.task_number == task_data.task_number
         ).first()
         
         if existing:
-            # Idempotent: return existing task
             logger.info(f"Task {existing.task_id} already exists (idempotent)")
             return existing
         
-        # Create task
         task = Task(
             job_id=task_data.job_id,
             task_number=task_data.task_number,
@@ -111,7 +107,6 @@ class TaskService:
         if not task:
             raise ValueError(f"Task not found: {task_id}")
         
-        # Check if transition is valid
         if not task.can_transition_to(new_status):
             raise ValueError(
                 f"Invalid transition: {task.status} → {new_status} "
@@ -121,7 +116,6 @@ class TaskService:
         old_status = task.status
         task.status = new_status
         
-        # Update timestamps and fields based on status
         if new_status == TaskStatus.ASSIGNED:
             task.assigned_at = datetime.utcnow()
             if node_id:
@@ -142,7 +136,7 @@ class TaskService:
         
         elif new_status == TaskStatus.RETRYING:
             task.retry_count += 1
-            task.node_id = None  # Clear node assignment
+            task.node_id = None
         
         db.commit()
         db.refresh(task)
@@ -278,7 +272,6 @@ class TaskService:
         if not task:
             raise ValueError(f"Task not found: {task_id}")
         
-        # Store progress in metadata
         if not task.result_metadata:
             task.result_metadata = {}
         

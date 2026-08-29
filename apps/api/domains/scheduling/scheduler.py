@@ -34,22 +34,18 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SchedulingRequirements:
     """Workload resource requirements."""
-    # Resource requirements
     cpu_cores_min: int
     ram_gb_min: float
     gpu_required: bool = False
     gpu_vram_gb_min: Optional[float] = None
     
-    # Task parameters
     task_count: int = 0
     estimated_task_duration_seconds: int = 60
     
-    # Constraints
     deadline_seconds: Optional[int] = None
     budget_clstr: float = 0
     reliability_min: float = 0.7
     
-    # Preferences
     prefer_gpu: bool = False
 
 
@@ -79,12 +75,11 @@ class AllocationPlan:
     job_id: str
     total_tasks: int
     allocated_nodes: List[str]
-    task_distribution: Dict[str, List[int]]  # node_id -> task_numbers
+    task_distribution: Dict[str, List[int]]
     estimated_cost_clstr: float
     estimated_duration_seconds: int
     scheduling_timestamp: datetime
     
-    # Audit information
     candidate_nodes_count: int
     filtered_reasons: Dict[str, int]
     node_scores: List[Dict[str, Any]]
@@ -116,7 +111,6 @@ class AllocationPlan:
 class ResourceScheduler:
     """Deterministic resource scheduler."""
     
-    # Scoring weights (must sum to 1.0)
     WEIGHT_RELIABILITY = 0.40
     WEIGHT_COST = 0.30
     WEIGHT_CAPACITY = 0.30
@@ -137,19 +131,15 @@ class ResourceScheduler:
         """
         logger.info(f"Scheduling job {job.job_id} with {requirements.task_count} tasks")
         
-        # Step 1: Get all nodes
         all_nodes = self.db.query(Node).all()
         logger.info(f"Total nodes in system: {len(all_nodes)}")
         
-        # Step 2: Filter by compatibility
         compatible_nodes = self._filter_by_compatibility(all_nodes, requirements)
         logger.info(f"Compatible nodes: {len(compatible_nodes)}")
         
-        # Step 3: Filter by availability
         available_nodes = self._filter_by_availability(compatible_nodes, requirements)
         logger.info(f"Available nodes: {len(available_nodes)}")
         
-        # Check if we have any nodes
         if not available_nodes:
             return self._create_infeasible_plan(
                 job.job_id,
@@ -158,13 +148,11 @@ class ResourceScheduler:
                 "No nodes meet requirements"
             )
         
-        # Step 4: Score and rank nodes
         scored_nodes = self._score_nodes(available_nodes, requirements)
         scored_nodes.sort(key=lambda x: x.composite_score, reverse=True)
         
         logger.info(f"Top node score: {scored_nodes[0].composite_score:.3f}")
         
-        # Step 5: Select nodes for allocation
         selected_nodes = self._select_nodes(scored_nodes, requirements)
         
         if not selected_nodes:
@@ -175,13 +163,11 @@ class ResourceScheduler:
                 "No nodes passed selection criteria"
             )
         
-        # Step 6: Distribute tasks across nodes
         task_distribution = self._distribute_tasks(
             selected_nodes,
             requirements.task_count
         )
         
-        # Step 7: Calculate cost and duration
         estimated_cost = self._calculate_cost(task_distribution, selected_nodes)
         estimated_duration = self._estimate_duration(
             task_distribution,
@@ -189,7 +175,6 @@ class ResourceScheduler:
             requirements.estimated_task_duration_seconds
         )
         
-        # Step 8: Validate constraints
         warnings = []
         is_feasible = True
         
@@ -206,7 +191,6 @@ class ResourceScheduler:
             )
             is_feasible = False
         
-        # Step 9: Create allocation plan
         plan = AllocationPlan(
             job_id=job.job_id,
             total_tasks=requirements.task_count,
@@ -217,7 +201,7 @@ class ResourceScheduler:
             scheduling_timestamp=datetime.utcnow(),
             candidate_nodes_count=len(all_nodes),
             filtered_reasons=self.filtered_reasons,
-            node_scores=[ns.to_dict() for ns in scored_nodes[:10]],  # Top 10 for audit
+            node_scores=[ns.to_dict() for ns in scored_nodes[:10]],
             is_feasible=is_feasible,
             warnings=warnings
         )
@@ -240,26 +224,22 @@ class ResourceScheduler:
         for node in nodes:
             caps = node.capabilities
             
-            # Check CPU
             cpu_cores = caps.get("cpu_cores_logical") or caps.get("cpu_cores_physical") or 0
             if cpu_cores < requirements.cpu_cores_min:
                 self._increment_filter_reason("insufficient_cpu")
                 continue
             
-            # Check RAM
             ram_gb = caps.get("ram_total_gb", 0)
             if ram_gb < requirements.ram_gb_min:
                 self._increment_filter_reason("insufficient_ram")
                 continue
             
-            # Check GPU if required
             if requirements.gpu_required:
                 gpu_available = caps.get("gpu_available", False) or caps.get("gpu_count", 0) > 0
                 if not gpu_available:
                     self._increment_filter_reason("no_gpu")
                     continue
                 
-                # Check VRAM if specified
                 if requirements.gpu_vram_gb_min:
                     gpus = caps.get("gpus", [])
                     if gpus:
@@ -268,7 +248,6 @@ class ResourceScheduler:
                             self._increment_filter_reason("insufficient_vram")
                             continue
                     else:
-                        # No detailed GPU info
                         self._increment_filter_reason("gpu_info_missing")
                         continue
             
@@ -285,7 +264,6 @@ class ResourceScheduler:
         available = []
         
         for node in nodes:
-            # Must be available or have capacity
             if node.status == NodeStatus.OFFLINE:
                 self._increment_filter_reason("offline")
                 continue
@@ -294,12 +272,10 @@ class ResourceScheduler:
                 self._increment_filter_reason("unhealthy")
                 continue
             
-            # Check capacity
             if node.current_task_count >= node.max_concurrent_tasks:
                 self._increment_filter_reason("at_capacity")
                 continue
             
-            # Check reliability
             if node.reliability_score < requirements.reliability_min:
                 self._increment_filter_reason("low_reliability")
                 continue
@@ -320,7 +296,6 @@ class ResourceScheduler:
         """
         scored = []
         
-        # Get ranges for normalization
         if not nodes:
             return scored
         
@@ -332,27 +307,22 @@ class ResourceScheduler:
         max_capacity = max(capacities)
         
         for node in nodes:
-            # Reliability score (already 0-1)
             reliability_score = node.reliability_score
             
-            # Cost score (inverted: lower cost = higher score)
             if max_cost > min_cost:
                 cost_score = 1.0 - (float(node.cost_per_task_clstr) - min_cost) / (max_cost - min_cost)
             else:
                 cost_score = 1.0
             
-            # Capacity score (higher available capacity = higher score)
             available_capacity = node.max_concurrent_tasks - node.current_task_count
             capacity_score = available_capacity / max_capacity if max_capacity > 0 else 0.0
             
-            # GPU bonus if preferred
             if requirements.prefer_gpu:
                 caps = node.capabilities
                 has_gpu = caps.get("gpu_available", False) or caps.get("gpu_count", 0) > 0
                 if has_gpu:
                     reliability_score = min(1.0, reliability_score * 1.1)
             
-            # Composite score (weighted average)
             composite_score = (
                 self.WEIGHT_RELIABILITY * reliability_score +
                 self.WEIGHT_COST * cost_score +
@@ -379,10 +349,8 @@ class ResourceScheduler:
         
         Uses top-ranked nodes up to a reasonable limit.
         """
-        # For frame rendering, distribute across multiple nodes for parallelism
-        # Use top 25% of nodes or at least 1
         max_nodes = max(1, len(scored_nodes) // 4)
-        max_nodes = min(max_nodes, 10)  # Cap at 10 nodes for simplicity
+        max_nodes = min(max_nodes, 10)
         
         selected = scored_nodes[:max_nodes]
         
@@ -403,7 +371,6 @@ class ResourceScheduler:
         distribution = {node.node.node_id: [] for node in nodes}
         
         for task_num in range(1, task_count + 1):
-            # Round-robin assignment
             node_index = (task_num - 1) % len(nodes)
             node_id = nodes[node_index].node.node_id
             distribution[node_id].append(task_num)
@@ -440,7 +407,6 @@ class ResourceScheduler:
         """
         max_tasks_per_node = max(len(tasks) for tasks in distribution.values())
         
-        # Sequential execution on each node
         estimated_duration = max_tasks_per_node * task_duration_seconds
         
         return estimated_duration
@@ -487,14 +453,12 @@ class ResourceScheduler:
         
         for node_id, task_numbers in plan.task_distribution.items():
             for task_num in task_numbers:
-                # Create task parameters
                 task_params = {
                     **base_task_parameters,
                     "task_index": task_num - 1,
                     "assigned_node_id": node_id
                 }
                 
-                # Create task
                 from domains.tasks.schemas import TaskCreate
                 task_data = TaskCreate(
                     job_id=job.job_id,

@@ -16,7 +16,6 @@ def recover_incident(incident_id: str, db: Session = Depends(get_db)):
     
     Automatically reassigns affected tasks to healthy nodes.
     """
-    # Get incident
     incident = db.query(Incident).filter(Incident.incident_id == incident_id).first()
     
     if not incident:
@@ -28,7 +27,6 @@ def recover_incident(incident_id: str, db: Session = Depends(get_db)):
             detail=f"Cannot recover incident type: {incident.incident_type}"
         )
     
-    # Run recovery
     recovery_service = RecoveryService(db)
     result = recovery_service.recover_from_node_failure(incident)
     
@@ -58,13 +56,11 @@ def get_recovery_status(db: Session = Depends(get_db)):
     from domains.incidents.models import IncidentStatus
     from domains.tasks.models import TaskStatus
     
-    # Count open incidents
     open_incidents = db.query(Incident).filter(
         Incident.status == IncidentStatus.OPEN,
         Incident.incident_type == "node_failure"
     ).count()
     
-    # Count tasks needing recovery
     from domains.tasks.models import Task
     tasks_needing_recovery = db.query(Task).filter(
         Task.status.in_([TaskStatus.FAILED]),
