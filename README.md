@@ -14,6 +14,62 @@ This hackathon MVP demonstrates distributed 3D rendering with:
 - **Economic incentives** through the CLSTR token system
 - **Live monitoring** dashboard with full visibility
 
+### What Is Real (Genuinely Implemented)
+
+✅ **Distributed Execution:**
+- Remote node registration and capability discovery
+- Pull-based task polling (firewall-friendly)
+- Distributed task execution across multiple machines
+- Real heartbeat monitoring (5s interval)
+- Real-time WebSocket events
+
+✅ **Failure & Recovery:**
+- Heartbeat-based failure detection (< 15s)
+- Automatic task reassignment to healthy nodes
+- AI recovery recommendations with deterministic validation
+- Incident tracking and resolution
+- Economic penalties and rewards
+
+✅ **AI Orchestration:**
+- AWS Bedrock integration (Claude Sonnet 3.5)
+- Workload analysis and resource planning
+- Recovery decision recommendations
+- Fallback logic when AI unavailable
+- All recommendations validated deterministically
+
+✅ **Economic System:**
+- CLSTR internal token ledger
+- Auditable transaction history
+- Provider rewards and penalties
+- Customer compensation for failures
+- Deterministic accounting (no double-payments)
+
+✅ **Reliability Tracking:**
+- Provider reliability scoring
+- Task success rate tracking
+- Uptime monitoring
+- Historical performance metrics
+
+### What Is Simulated (MVP Limitations)
+
+⚠️ **Rendering Workload:**
+- Uses simulated Python renderer (not real Blender)
+- Generates placeholder images for demo speed
+- Real Blender integration: post-MVP (~1 week)
+
+⚠️ **GPU Rendering:**
+- CPU-based simulation only
+- GPU detection present, rendering simulated
+- Real GPU rendering: post-MVP
+
+⚠️ **Storage:**
+- Local filesystem storage
+- S3/cloud storage: production deployment
+
+⚠️ **Payment Processing:**
+- Internal CLSTR tokens only
+- Real payment integration (Stripe): production
+
 ## 🏗️ Architecture
 
 ### Modular Monolith Control Plane
