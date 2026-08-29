@@ -36,9 +36,9 @@ async def register_node(
         event = EventFactory.node_joined(
             node_id=node.node_id,
             name=node.provider_id,
-            cpu_cores=node.cpu_cores,
-            total_ram_gb=node.total_ram_gb,
-            gpu_info=node.gpu_info
+            cpu_cores=node.capabilities.get('cpu_cores', 0),
+            total_ram_gb=node.capabilities.get('total_ram_gb', 0),
+            gpu_info=node.capabilities.get('gpu_count', 0)
         )
         await broadcast_event_async(event)
         
