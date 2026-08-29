@@ -66,7 +66,7 @@ class Node(Base):
     
     # Relationships
     tasks = relationship("Task", back_populates="node")
-    incidents = relationship("Incident", back_populates="node")
+    incidents = relationship("Incident", back_populates="node", foreign_keys="[Incident.node_id]")
     reliability = relationship("ReliabilityScore", back_populates="node", uselist=False)
     
     @property
