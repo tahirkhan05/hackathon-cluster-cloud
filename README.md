@@ -1,227 +1,473 @@
-# ClusterCloud
+# ClusterCloud ☁️
 
-**Community-owned cloud computing marketplace for distributed workloads**
+> A decentralized community cloud computing marketplace powered by distributed nodes, economic incentives, and AI-driven orchestration.
 
-ClusterCloud enables individuals to share compute resources and allows customers to execute parallelizable workloads across a distributed network of provider nodes—without understanding traditional cloud infrastructure.
+![Architecture](./diagrams/Architecture.jpeg)
 
-## 🎯 MVP Focus: 3D Frame Rendering
+## 📋 Table of Contents
 
-This hackathon MVP demonstrates distributed 3D rendering with:
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Key Features](#key-features)
+- [System Components](#system-components)
+- [Workflow](#workflow)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [API Domains](#api-domains)
+- [Technology Stack](#technology-stack)
+- [Configuration](#configuration)
+- [Development](#development)
+- [Demo](#demo)
+- [Economic System](#economic-system)
+- [Reliability & Recovery](#reliability--recovery)
+- [Contributing](#contributing)
+- [License](#license)
 
-- **Automatic workload analysis** using AI
-- **Intelligent resource selection** and task distribution
-- **Real-time failure detection** and automatic recovery
-- **Economic incentives** through the CLSTR token system
-- **Live monitoring** dashboard with full visibility
+## 🌟 Overview
 
-### What Is Real (Genuinely Implemented)
+ClusterCloud is a next-generation distributed computing platform that enables anyone to contribute computing resources to a shared marketplace. Built with reliability, fairness, and efficiency at its core, it combines:
 
-✅ **Distributed Execution:**
-- Remote node registration and capability discovery
-- Pull-based task polling (firewall-friendly)
-- Distributed task execution across multiple machines
-- Real heartbeat monitoring (5s interval)
-- Real-time WebSocket events
-
-✅ **Failure & Recovery:**
-- Heartbeat-based failure detection (< 15s)
-- Automatic task reassignment to healthy nodes
-- AI recovery recommendations with deterministic validation
-- Incident tracking and resolution
-- Economic penalties and rewards
-
-✅ **AI Orchestration:**
-- AWS Bedrock integration (optional - graceful fallback to deterministic mode)
-- Workload analysis and resource planning
-- Recovery decision recommendations
-- All AI recommendations validated deterministically
-- System fully functional without AWS credentials
-
-✅ **Economic System:**
-- CLSTR internal token ledger
-- Auditable transaction history
-- Provider rewards and penalties
-- Customer compensation for failures
-- Deterministic accounting (no double-payments)
-
-✅ **Reliability Tracking:**
-- Provider reliability scoring
-- Task success rate tracking
-- Uptime monitoring
-- Historical performance metrics
-
-### What Is Simulated (MVP Limitations)
-
-⚠️ **Rendering Workload:**
-- Uses simulated Python renderer (not real Blender)
-- Generates placeholder images for demo speed
-- Real Blender integration: post-MVP (~1 week)
-
-⚠️ **GPU Rendering:**
-- CPU-based simulation only
-- GPU detection present, rendering simulated
-- Real GPU rendering: post-MVP
-
-⚠️ **Storage:**
-- Local filesystem storage
-- S3/cloud storage: production deployment
-
-⚠️ **Payment Processing:**
-- Internal CLSTR tokens only
-- Real payment integration (Stripe): production
+- **Decentralized Execution**: Distributed node agents running on commodity hardware
+- **Economic Incentives**: Blockchain-inspired ledger system with stakes, rewards, and penalties
+- **AI Orchestration**: Intelligent workload scheduling and failure recovery
+- **Real-time Monitoring**: WebSocket-based live updates and system observability
+- **Fault Tolerance**: Automatic failure detection and cascading impact analysis
 
 ## 🏗️ Architecture
 
-### Modular Monolith Control Plane
-- **Workloads**: Job definitions and workload type registry
-- **Jobs & Tasks**: State management and execution tracking
-- **Nodes**: Provider registration and capability tracking
-- **Scheduling**: Task assignment and resource matching
-- **Execution**: Orchestration and progress monitoring
-- **Incidents**: Failure detection and recovery coordination
-- **Reliability**: Provider reputation and history
-- **Ledger**: CLSTR tokenomics and transactions
-- **AI Orchestration**: Bedrock integration for intelligent decisions
+ClusterCloud follows a **control plane + worker nodes** architecture:
 
-### Distributed Workers
-- **Node Agent**: Python daemon running on provider machines
+```
+┌─────────────────────────────────────────────────────────┐
+│                   Control Plane (API)                    │
+│  ┌──────────┐ ┌──────────┐ ┌─────────┐ ┌──────────┐   │
+│  │Scheduling│ │ Ledger   │ │Recovery │ │WebSocket │   │
+│  │  Engine  │ │  System  │ │  Agent  │ │  Server  │   │
+│  └──────────┘ └──────────┘ └─────────┘ └──────────┘   │
+└─────────────────────────────────────────────────────────┘
+            │                    ▲
+            │ Task Distribution  │ Heartbeats & Status
+            ▼                    │
+┌────────────────────────────────────────────────────────┐
+│                    Worker Nodes                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
+│  │  Node 1  │  │  Node 2  │  │  Node N  │            │
+│  │ Agent    │  │ Agent    │  │ Agent    │            │
+│  └──────────┘  └──────────┘  └──────────┘            │
+└────────────────────────────────────────────────────────┘
+```
+
+### Workflow Diagram
+
+![Workflow](./diagrams/Workflow%20drawings.png)
+
+## ✨ Key Features
+
+### 🎯 Distributed Task Execution
+- **Dynamic Workload Scheduling**: Intelligent task assignment based on node capabilities
+- **Parallel Processing**: Concurrent task execution across multiple nodes
+- **Resource Optimization**: Hardware-aware task distribution
+
+### 💰 Economic System
+- **Provider Stakes**: Nodes stake tokens to ensure reliability
+- **Performance-Based Rewards**: Earn tokens for successful task completion
+- **Automatic Penalties**: Failed tasks trigger financial penalties
+- **Broker Fees**: Platform sustainability through transaction fees
+- **Customer Credits**: Initial balance for job submission
+
+### 🛡️ Reliability & Fault Tolerance
+- **Heartbeat Monitoring**: Continuous node health tracking
+- **Failure Detection**: Immediate identification of node failures
+- **Automatic Recovery**: AI-powered recovery action planning
+- **Cascade Analysis**: Impact assessment for downstream dependencies
+- **Task Retry Logic**: Configurable retry mechanisms with exponential backoff
+
+### 🤖 AI-Powered Intelligence
+- **Workload Agent**: Analyzes requirements and recommends resources
+- **Provider Agent**: Evaluates node capabilities and constraints
+- **Recovery Agent**: Generates recovery strategies for failures
+- **Decision Window**: Intelligent timeout windows for failure response
+
+### 📊 Real-Time Observability
+- **WebSocket Streaming**: Live task status updates
+- **System Statistics**: Comprehensive metrics dashboard
+- **Incident Tracking**: Automatic incident creation and lifecycle management
+- **Audit Logs**: Complete transaction history
+
+## 🧩 System Components
+
+### 1. **Control Plane API** (`apps/api`)
+FastAPI-based backend orchestrating the entire system:
+
+- **Jobs**: Workload submission and management
+- **Tasks**: Individual execution units
+- **Nodes**: Worker registration and lifecycle
+- **Workloads**: Job templates and specifications
+- **Scheduling**: Intelligent task assignment
+- **Ledger**: Economic transaction tracking
+- **Recovery**: Failure handling and remediation
+- **Impact Analysis**: Cascade effect evaluation
+- **Reliability**: Health checks and monitoring
+- **WebSocket**: Real-time event streaming
+
+### 2. **Node Agent** (`apps/node-agent`)
+Python-based worker daemon that:
+
+- Discovers hardware capabilities (CPU, GPU, memory, disk)
 - Registers with control plane
-- Executes rendering tasks with resource isolation
-- Sends heartbeat signals
-- Reports task progress and results
+- Maintains heartbeat connection
+- Polls for assigned tasks
+- Executes workloads in isolated environments
+- Reports progress and status
+- Handles graceful shutdown
+
+### 3. **Web Dashboard** (`apps/web`)
+Next.js frontend providing:
+
+- Job submission interface
+- Real-time task monitoring
+- Node management dashboard
+- Economic ledger visualization
+- Incident tracking UI
+- System statistics and analytics
+
+## 📊 API Domains
+
+| Domain | Purpose | Key Features |
+|--------|---------|--------------|
+| **Jobs** | Workload lifecycle management | Submit, track, cancel jobs |
+| **Tasks** | Granular execution tracking | Status updates, retries, results |
+| **Nodes** | Worker node management | Registration, health, capabilities |
+| **Workloads** | Job templates | Pre-configured workload types |
+| **Scheduling** | Task assignment | AI-powered optimization |
+| **Ledger** | Economic transactions | Stakes, payments, penalties |
+| **Recovery** | Failure remediation | Automated recovery plans |
+| **Impact** | Cascade analysis | Dependency impact assessment |
+| **Incidents** | Issue tracking | Auto-creation, escalation |
+| **Reliability** | System health | Metrics, SLAs, health checks |
+| **Stats** | Analytics | System-wide statistics |
+| **WebSocket** | Real-time events | Live updates, streaming |
+| **Demo** | Testing utilities | Simulation endpoints |
+
+## 🛠️ Technology Stack
+
+### Backend
+- **Framework**: FastAPI (Python 3.11+)
+- **Database**: SQLite (dev) / PostgreSQL (prod)
+- **ORM**: SQLAlchemy with Alembic migrations
+- **Async Support**: asyncio, WebSockets
+- **AI Integration**: AWS Bedrock (Claude 3 Sonnet)
+- **Validation**: Pydantic v2
 
 ### Frontend
-- **Next.js dashboard** with real-time WebSocket updates
-- Simple customer workflow: specify workload → observe execution
-- Network health, active jobs, incidents, and recovery activity
+- **Framework**: Next.js 14 (React 18)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **State**: React Hooks
 
-## 🚀 Quick Start
+### Infrastructure
+- **Containerization**: Docker & Docker Compose
+- **Orchestration**: Custom scheduler
+- **Networking**: Bridge network for inter-service communication
+- **Storage**: Volume persistence for PostgreSQL
+
+### Node Agent
+- **Language**: Python 3.11+
+- **Hardware Discovery**: platform, psutil, GPUtil
+- **Process Management**: Threading, signal handling
+- **Logging**: Structured logging with levels
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+#### API Configuration (`apps/api/.env`)
+```bash
+# Server
+API_HOST=0.0.0.0
+API_PORT=8000
+API_WORKERS=4
+LOG_LEVEL=INFO
+
+# Database
+DATABASE_URL=sqlite:///./clustercloud.db
+# DATABASE_URL=postgresql://user:pass@postgres:5432/clustercloud
+
+# Security
+JWT_SECRET=your-secret-key-change-in-production
+NODE_API_KEY=optional-api-key-for-nodes
+ENABLE_NODE_AUTH=false
+
+# Resource Limits
+MAX_TASK_MEMORY_MB=2048
+MAX_TASK_CPU_CORES=2.0
+MAX_TASK_DISK_MB=5120
+
+# Docker
+ENABLE_DOCKER_ISOLATION=true
+DOCKER_SECURITY_OPT=no-new-privileges:true
+DOCKER_NETWORK=clustercloud_network
+
+# AWS Bedrock (AI)
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-key
+AWS_SECRET_ACCESS_KEY=your-secret
+BEDROCK_MODEL_ID=anthropic.claude-3-sonnet-20240229-v1:0
+
+# Timeouts
+WORKLOAD_TIMEOUT_SECONDS=300
+TASK_TIMEOUT_SECONDS=120
+HEARTBEAT_TIMEOUT_SECONDS=15
+
+# Economic System
+INITIAL_CUSTOMER_BALANCE=10000
+PROVIDER_RELIABILITY_STAKE=100
+BROKER_FEE_PERCENTAGE=5
+FAILURE_PENALTY_PERCENTAGE=20
+RECOVERY_REWARD_PERCENTAGE=10
+```
+
+#### Node Agent Configuration (`apps/node-agent/.env`)
+```bash
+# Control Plane
+CONTROL_PLANE_URL=http://localhost:8000
+PROVIDER_ID=provider-001
+
+# Agent Settings
+HEARTBEAT_INTERVAL_SECONDS=5
+MAX_CONCURRENT_TASKS=2
+LOG_LEVEL=INFO
+
+# Demo Mode (optional)
+SIMULATE_FAILURE=false
+FAILURE_AFTER_SECONDS=120
+```
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.11+
-- Node.js 18+
+- Docker & Docker Compose
+- Python 3.11+ (for local development)
+- Node.js 18+ (for web development)
 
-**Optional (Not Required for Demo):**
-- Docker (for production workload isolation - not used in MVP)
-- AWS Bedrock credentials (for AI-powered recommendations - deterministic fallback works without it)
+### Quick Start with Docker
 
-### Setup
-
-1. **Clone and configure**
-   ```bash
-   git clone https://github.com/tahirkhan05/hackathon-cluster-cloud.git
-   cd cluster_cloud
-   ```
-
-2. **Set up backend**
-   ```bash
-   cd apps/api
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   python main.py
-   ```
-
-3. **Set up node agent(s)**
-   ```bash
-   cd apps/node-agent
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   python agent.py
-   ```
-
-4. **Set up frontend**
-   ```bash
-   cd apps/web
-   npm install
-   npm run dev
-   ```
-
-5. **Access the dashboard**
-   Open http://localhost:3000
-
-**For detailed setup including two-laptop distributed demo, see [docs/RUN_INSTRUCTIONS.md](docs/RUN_INSTRUCTIONS.md)**
-
-## 🎬 Demo Scenario
-
-The demo showcases automatic failure recovery:
-
-1. Customer submits 100-frame rendering job
-2. AI analyzes workload as parallelizable
-3. System selects 4 provider nodes
-4. Frames distributed (25 frames per node)
-5. Live progress dashboard shows execution
-6. **Node C fails mid-rendering**
-7. System detects missing heartbeat
-8. Recovery agent identifies incomplete tasks
-9. Compatible replacement node selected
-10. Tasks reassigned automatically
-11. Rendering continues seamlessly
-12. Reliability scores and CLSTR ledger updated
-13. Final rendered frames available
-
-## 📦 Repository Structure
-
-```
-clustercloud/
-├── apps/
-│   ├── api/              # FastAPI control plane
-│   ├── node-agent/       # Python node worker
-│   └── web/              # Next.js dashboard
-├── docs/                 # Documentation
-└── docker-compose.yml    # Local development stack (optional)
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd cluster_cloud
 ```
 
-## 🔒 Security (MVP)
+2. **Configure environment**
+```bash
+cp .env.example .env
+cp apps/api/.env.development.example apps/api/.env.development
+```
 
-- Docker container isolation for workloads
-- Non-privileged execution with resource limits
-- Restricted network access
-- Ephemeral job workspaces
-- API key authentication between components
-- No host filesystem exposure
-- Audit logging for all operations
+3. **Start all services**
+```bash
+docker-compose up -d
+```
 
-**Note**: This is a hackathon MVP. Production deployment requires additional security hardening.
+4. **Verify services**
+```bash
+# API Health Check
+curl http://localhost:8000/health
 
-## 💰 CLSTR Tokenomics
+# Web Dashboard
+open http://localhost:3000
 
-Internal simulated currency for the MVP:
+# API Documentation
+open http://localhost:8000/docs
+```
 
-- **Customers** spend CLSTR for compute resources
-- **Providers** earn CLSTR by executing tasks successfully
-- **Broker fee** (5%) deducted from transactions
-- **Reliability stake** held for quality assurance
-- **Penalties** applied for node failures
-- **Rewards** given for successful recovery assistance
+### Local Development
 
-All transactions are deterministic and auditable.
+#### API Backend
+```bash
+cd apps/api
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
 
-## 🧪 Testing
+#### Web Frontend
+```bash
+cd apps/web
+npm install
+npm run dev
+```
+
+#### Node Agent
+```bash
+cd apps/node-agent
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python agent.py
+```
+
+## 🎬 Demo
+
+Run the complete end-to-end distributed rendering demo:
 
 ```bash
-# Run backend tests
-cd apps/api
-pytest
-
-# Run frontend tests
-cd apps/web
-npm test
-
-# Run integration tests
-cd tests
-pytest
+python demo_distributed_rendering.py
 ```
 
-## 📝 License
+This demo will:
+1. ✅ Start the API backend
+2. ✅ Launch multiple node agents
+3. ✅ Submit a distributed rendering job (12 frames)
+4. ✅ Watch tasks execute across nodes
+5. ✅ Display results and statistics
 
-MIT License - see LICENSE file for details
+### Demo Features
+- **Multi-node simulation**: 3 worker nodes
+- **Parallel execution**: Tasks distributed automatically
+- **Live monitoring**: Real-time progress updates
+- **Result verification**: Output validation
+- **Economic tracking**: View ledger transactions
+
+## 💎 Economic System
+
+ClusterCloud implements a blockchain-inspired economic model:
+
+### Transaction Types
+
+| Type | Trigger | Amount | Purpose |
+|------|---------|--------|---------|
+| **Stake** | Node registration | `PROVIDER_RELIABILITY_STAKE` | Ensure provider commitment |
+| **Job Payment** | Job submission | Task price × count | Reserve funds for execution |
+| **Task Reward** | Task completion | Task price | Pay provider for work |
+| **Broker Fee** | Task completion | Price × `BROKER_FEE_PERCENTAGE` | Platform sustainability |
+| **Failure Penalty** | Task failure | Stake × `FAILURE_PENALTY_PERCENTAGE` | Discourage unreliable nodes |
+| **Recovery Reward** | Recovery task | Original price × `RECOVERY_REWARD_PERCENTAGE` | Incentivize failure handling |
+
+### Balance Management
+- **Customers**: Start with `INITIAL_CUSTOMER_BALANCE` credits
+- **Providers**: Must maintain stake balance for active nodes
+- **Platform**: Collects broker fees for sustainability
+
+### Example Flow
+```
+1. Provider stakes 100 tokens → Node registers
+2. Customer submits job (10 tasks × 50 = 500 tokens)
+3. Task completes → Provider +50, Platform +2.5
+4. Task fails → Provider -20 penalty
+5. Recovery succeeds → Recovery node +5 bonus
+```
+
+## 🔄 Reliability & Recovery
+
+### Failure Detection
+```python
+# Heartbeat-based health monitoring
+HEARTBEAT_TIMEOUT = 15 seconds
+MAX_CONSECUTIVE_FAILURES = 3
+
+if node.last_heartbeat > TIMEOUT:
+    mark_as_unhealthy()
+    trigger_incident()
+    initiate_recovery()
+```
+
+### Recovery Process
+
+1. **Detection**: Heartbeat monitor identifies failure
+2. **Incident Creation**: Automatic incident logged
+3. **Impact Analysis**: Cascade analyzer evaluates dependencies
+4. **AI Planning**: Recovery agent generates action plan
+5. **Execution**: Recovery service coordinates remediation
+6. **Verification**: Confirm recovery success
+
+### Cascade Analysis
+The impact analyzer evaluates:
+- Direct task failures on the failed node
+- Downstream tasks waiting on failed task results
+- Job completion blockers
+- Economic impact (penalties, refunds)
+
+## 📁 Project Structure
+
+```
+cluster_cloud/
+├── apps/
+│   ├── api/                    # FastAPI backend
+│   │   ├── domains/           # Domain-driven design modules
+│   │   │   ├── ai/           # AI agent implementations
+│   │   │   ├── jobs/         # Job management
+│   │   │   ├── tasks/        # Task execution
+│   │   │   ├── nodes/        # Node lifecycle
+│   │   │   ├── scheduling/   # Task assignment
+│   │   │   ├── ledger/       # Economic system
+│   │   │   ├── recovery/     # Failure handling
+│   │   │   ├── impact/       # Cascade analysis
+│   │   │   └── ...
+│   │   ├── alembic/          # Database migrations
+│   │   ├── config.py         # Configuration management
+│   │   ├── database.py       # SQLAlchemy setup
+│   │   ├── main.py           # Application entry point
+│   │   └── requirements.txt
+│   │
+│   ├── node-agent/            # Python worker agent
+│   │   ├── agent.py          # Main agent orchestrator
+│   │   ├── config.py         # Agent configuration
+│   │   ├── hardware.py       # Capability discovery
+│   │   ├── registration.py   # Control plane registration
+│   │   ├── heartbeat.py      # Health monitoring
+│   │   ├── executor.py       # Task execution engine
+│   │   └── requirements.txt
+│   │
+│   └── web/                   # Next.js frontend
+│       ├── app/              # Next.js 14 app directory
+│       ├── components/       # React components
+│       ├── public/           # Static assets
+│       └── package.json
+│
+├── diagrams/                  # Architecture documentation
+│   ├── Architecture.jpeg
+│   └── Workflow drawings.png
+│
+├── docker-compose.yml         # Multi-service orchestration
+├── .env.example              # Environment template
+└── demo_distributed_rendering.py  # End-to-end demo
+```
 
 ## 🤝 Contributing
 
-This is a hackathon MVP. Contributions welcome after initial demo!
+We welcome contributions! Here's how to get started:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes**: Follow existing code style
+4. **Test thoroughly**: Ensure all services work
+5. **Commit**: `git commit -m 'Add amazing feature'`
+6. **Push**: `git push origin feature/amazing-feature`
+7. **Open a Pull Request**: Describe your changes
+
+### Development Guidelines
+- Follow Python PEP 8 style for backend code
+- Use TypeScript for frontend development
+- Write clear docstrings and comments
+- Add tests for new features
+- Update documentation as needed
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- Built with FastAPI, Next.js, and modern Python
+- AI-powered by AWS Bedrock and Claude
+- Inspired by distributed computing research and blockchain economics
+- Community-driven open source project
 
 ---
 
-Built for the hackathon by the ClusterCloud team
+**Built with ❤️ by the ClusterCloud community**
+
+For questions, issues, or feature requests, please open an issue on GitHub.
