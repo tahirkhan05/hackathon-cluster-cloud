@@ -28,23 +28,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-[#F5F1E7]">
+      <header className="bg-white border-b border-[#153B44]/10 sticky top-0 z-50 shadow-sm">
         <div className="mx-auto px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-12">
               <Link href="/dashboard" className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                    <div className="w-5 h-5 border-2 border-white rounded-sm"></div>
+                  <div className="w-10 h-10 bg-[#153B44] rounded-xl flex items-center justify-center shadow-md">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#FF8A65"/>
+                      <path d="M2 17L12 22L22 17" stroke="#FF8A65" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M2 12L12 17L22 12" stroke="#FFB199" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white"></div>
                 </div>
                 <div>
-                  <div className="text-lg font-semibold text-slate-900 tracking-tight">
+                  <div className="text-xl font-bold text-[#153B44] tracking-tight">
                     ClusterCloud
                   </div>
-                  <div className="text-xs text-slate-500 -mt-0.5">
+                  <div className="text-xs text-[#FF6B35] font-semibold -mt-0.5">
                     Control Plane
                   </div>
                 </div>
@@ -60,10 +63,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        'flex items-center gap-2.5 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200',
+                        'flex items-center gap-2.5 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-300',
                         isActive
-                          ? 'bg-indigo-50 text-indigo-700 shadow-sm'
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                          ? 'bg-[#FF8A65] text-white shadow-md'
+                          : 'text-[#153B44] hover:bg-[#FF8A65]/10 hover:text-[#FF6B35]'
                       )}
                     >
                       <Icon className="w-4 h-4" />
@@ -77,14 +80,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-5">
               <ConnectionStatus />
               
-              <div className="h-8 w-px bg-slate-200"></div>
+              <div className="h-8 w-px bg-[#153B44]/10"></div>
               
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <div className="text-sm font-medium text-slate-900">
+                  <div className="text-sm font-bold text-[#153B44]">
                     Production
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-[#FF6B35] font-medium">
                     customer-demo-001
                   </div>
                 </div>

@@ -10,7 +10,7 @@ import {
   Clock,
   Database,
   Cpu,
-  HardDrive
+  Check
 } from 'lucide-react';
 
 interface Stats {
@@ -59,56 +59,12 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const StatCard = ({ 
-    title, 
-    value, 
-    subtitle, 
-    icon: Icon, 
-    gradient,
-    delay 
-  }: { 
-    title: string; 
-    value: string | number; 
-    subtitle: string; 
-    icon: any; 
-    gradient: string;
-    delay: number;
-  }) => (
-    <div 
-      className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 p-6 hover:border-blue-500/50 transition-all duration-500 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1"
-      style={{ 
-        animation: `fadeInUp 0.6s ease-out ${delay}s both`,
-      }}
-    >
-      {/* Animated gradient background */}
-      <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${gradient}`}></div>
-      
-      {/* Icon with glow effect */}
-      <div className={`relative mb-4 inline-flex p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-lg`}>
-        <Icon className="w-6 h-6 text-white" />
-      </div>
-      
-      {/* Content */}
-      <div className="relative">
-        <p className="text-slate-400 text-sm font-medium mb-1">{title}</p>
-        <h3 className="text-3xl font-bold text-white mb-1 transition-transform duration-300 group-hover:scale-105">
-          {value}
-        </h3>
-        <p className="text-slate-500 text-sm">{subtitle}</p>
-      </div>
-
-      {/* Hover shine effect */}
-      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-    </div>
-  );
-
   if (loading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="relative">
-            <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            <div className="w-16 h-16 border-4 border-[#FF8A65]/20 border-t-[#FF8A65] rounded-full animate-spin"></div>
           </div>
         </div>
       </DashboardLayout>
@@ -117,244 +73,187 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 pb-8">
+      <div className="space-y-12 pb-12">
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 p-8 md:p-12">
-          {/* Animated background elements */}
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute top-10 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-            <div className="absolute top-0 right-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-            <div className="absolute bottom-10 left-20 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-          </div>
+        <div className="relative overflow-hidden rounded-3xl bg-white p-12 md:p-16 card-shadow">
+          {/* Decorative blob */}
+          <div className="absolute -right-40 -top-40 w-96 h-96 bg-[#FF8A65] opacity-20 rounded-full animate-blob"></div>
+          <div className="absolute -right-20 top-20 w-64 h-64 bg-[#FFB199] opacity-30 rounded-full animate-float" style={{ animationDelay: '1s' }}></div>
+          
+          {/* Dot pattern overlay */}
+          <div className="absolute inset-0 dot-pattern opacity-30"></div>
 
           <div className="relative">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-fadeIn">
-              ClusterCloud Control Plane
+            <div className="inline-block mb-4">
+              <span className="text-[#FF6B35] text-sm font-semibold tracking-wide uppercase">
+                Control Plane
+              </span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold text-[#153B44] mb-6 leading-tight">
+              Engineering <span className="gradient-text">the future</span>
+              <br />
+              of <span className="text-[#FF6B35]">distributed</span> computing.
             </h1>
-            <p className="text-blue-100 text-lg md:text-xl max-w-2xl animate-fadeIn" style={{ animationDelay: '0.2s' }}>
-              Intelligent distributed computing platform with AI-powered orchestration and real-time monitoring
+            <p className="text-[#153B44]/70 text-xl max-w-2xl leading-relaxed">
+              Intelligent orchestration platform built for scale, designed for simplicity.
             </p>
-            
-            {/* Quick stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
-                <p className="text-blue-100 text-sm">Active Nodes</p>
-                <p className="text-3xl font-bold text-white mt-1">{stats.active_nodes}</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
-                <p className="text-blue-100 text-sm">Running Jobs</p>
-                <p className="text-3xl font-bold text-white mt-1">{stats.active_jobs}</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
-                <p className="text-blue-100 text-sm">Tasks Complete</p>
-                <p className="text-3xl font-bold text-white mt-1">{stats.completed_tasks}</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
-                <p className="text-blue-100 text-sm">CLSTR Balance</p>
-                <p className="text-3xl font-bold text-white mt-1">{balance.toLocaleString()}</p>
-              </div>
+
+            {/* CTA */}
+            <div className="mt-10">
+              <button className="inline-flex items-center gap-2 px-8 py-4 bg-[#153B44] text-white rounded-full font-medium hover:-translate-y-1 transition-all duration-300 hover:shadow-xl">
+                <span>Explore System</span>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="animate-bounce">
+                  <path d="M8 3L8 13M8 13L12 9M8 13L4 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             </div>
           </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {[
+            { label: 'Active Nodes', value: stats.active_nodes, total: stats.total_nodes, icon: Server },
+            { label: 'Running Jobs', value: stats.active_jobs, total: stats.total_jobs, icon: Activity },
+            { label: 'Tasks Complete', value: stats.completed_tasks, total: stats.total_tasks, icon: Check },
+            { label: 'CLSTR Balance', value: balance.toLocaleString(), total: null, icon: Zap },
+          ].map((stat, i) => (
+            <div
+              key={stat.label}
+              className="group bg-white rounded-2xl p-6 card-shadow hover-lift"
+              style={{ animation: `fadeInUp 0.6s ease-out ${i * 0.1}s both` }}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="p-3 bg-[#FF8A65]/10 rounded-xl group-hover:bg-[#FF8A65]/20 transition-colors">
+                  <stat.icon className="w-6 h-6 text-[#FF6B35]" />
+                </div>
+              </div>
+              <h3 className="text-3xl font-bold text-[#153B44] mb-1">
+                {stat.value}
+                {stat.total !== null && <span className="text-lg text-[#153B44]/40">/{stat.total}</span>}
+              </h3>
+              <p className="text-[#153B44]/60 text-sm font-medium">{stat.label}</p>
+            </div>
+          ))}
         </div>
 
         {/* System Metrics */}
         <div>
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-            <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
-            System Metrics
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title="Total Nodes"
-              value={stats.total_nodes}
-              subtitle="Compute resources"
-              icon={Server}
-              gradient="from-blue-500 to-blue-600"
-              delay={0}
-            />
-            <StatCard
-              title="Active Jobs"
-              value={stats.active_jobs}
-              subtitle="Currently processing"
-              icon={Activity}
-              gradient="from-purple-500 to-purple-600"
-              delay={0.1}
-            />
-            <StatCard
-              title="Task Completion"
-              value={`${stats.completed_tasks}/${stats.total_tasks}`}
-              subtitle="Overall progress"
-              icon={Zap}
-              gradient="from-pink-500 to-pink-600"
-              delay={0.2}
-            />
-            <StatCard
-              title="System Health"
-              value="99.9%"
-              subtitle="Uptime this month"
-              icon={TrendingUp}
-              gradient="from-emerald-500 to-emerald-600"
-              delay={0.3}
-            />
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-[#153B44] mb-2">System Metrics</h2>
+            <p className="text-[#153B44]/60">Real-time performance monitoring</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Network Status */}
+            <div className="bg-white rounded-2xl p-8 card-shadow hover-lift">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-[#153B44] flex items-center gap-3">
+                  <Database className="w-6 h-6 text-[#FF6B35]" />
+                  Network Status
+                </h3>
+                <span className="flex items-center gap-2 text-emerald-600 text-sm font-semibold">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  Online
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  { label: 'CPU Utilization', value: '45%', icon: Cpu, color: '#FF6B35' },
+                  { label: 'Memory Usage', value: '62%', icon: Database, color: '#FF8A65' },
+                  { label: 'Avg Task Time', value: '3.2s', icon: Clock, color: '#FFB199' },
+                ].map((metric, i) => (
+                  <div
+                    key={metric.label}
+                    className="flex items-center justify-between p-4 rounded-xl bg-[#F5F1E7] hover:bg-[#EEEAE0] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <metric.icon className="w-5 h-5" style={{ color: metric.color }} />
+                      <div>
+                        <p className="text-[#153B44] font-semibold">{metric.label}</p>
+                        <p className="text-[#153B44]/50 text-sm">Cluster average</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-bold text-[#153B44]">{metric.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white rounded-2xl p-8 card-shadow hover-lift">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-[#153B44] flex items-center gap-3">
+                  <Activity className="w-6 h-6 text-[#FF6B35]" />
+                  Recent Activity
+                </h3>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { event: 'Node registered', detail: 'TDESK joined cluster', time: '2m ago' },
+                  { event: 'Job completed', detail: 'Rendering task finished', time: '5m ago' },
+                  { event: 'Tasks assigned', detail: `${stats.total_tasks} tasks distributed`, time: '8m ago' },
+                  { event: 'Heartbeat received', detail: 'All nodes healthy', time: '10m ago' },
+                ].map((activity, i) => (
+                  <div 
+                    key={i}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-[#F5F1E7] hover:bg-[#EEEAE0] transition-all"
+                    style={{ animation: `slideInRight 0.5s ease-out ${i * 0.1}s both` }}
+                  >
+                    <div className="w-2 h-2 rounded-full bg-[#FF6B35]"></div>
+                    <div className="flex-1">
+                      <p className="text-[#153B44] font-semibold text-sm">{activity.event}</p>
+                      <p className="text-[#153B44]/50 text-xs">{activity.detail}</p>
+                    </div>
+                    <span className="text-[#153B44]/40 text-xs font-medium">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Performance Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Network Status */}
-          <div className="rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 p-6 hover:border-blue-500/50 transition-all duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
-                  <Database className="w-5 h-5 text-white" />
-                </div>
-                Network Status
-              </h3>
-              <span className="flex items-center gap-2 text-emerald-400 text-sm font-medium">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                </span>
-                Online
-              </span>
+        <div className="bg-white rounded-2xl p-8 card-shadow">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-2xl font-bold text-[#153B44] mb-1">Performance Insights</h3>
+              <p className="text-[#153B44]/60">System health and efficiency metrics</p>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/30 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <Cpu className="w-5 h-5 text-blue-400" />
-                  <div>
-                    <p className="text-white font-medium">CPU Utilization</p>
-                    <p className="text-slate-400 text-sm">Across all nodes</p>
-                  </div>
-                </div>
-                <span className="text-2xl font-bold text-white">45%</span>
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-purple-500/30 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <HardDrive className="w-5 h-5 text-purple-400" />
-                  <div>
-                    <p className="text-white font-medium">Memory Usage</p>
-                    <p className="text-slate-400 text-sm">Average across cluster</p>
-                  </div>
-                </div>
-                <span className="text-2xl font-bold text-white">62%</span>
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-pink-500/30 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-pink-400" />
-                  <div>
-                    <p className="text-white font-medium">Avg Task Time</p>
-                    <p className="text-slate-400 text-sm">Last 24 hours</p>
-                  </div>
-                </div>
-                <span className="text-2xl font-bold text-white">3.2s</span>
-              </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              <span className="text-emerald-600 font-semibold">99.9% Uptime</span>
             </div>
           </div>
 
-          {/* Recent Activity */}
-          <div className="rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 p-6 hover:border-purple-500/50 transition-all duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600">
-                  <Activity className="w-5 h-5 text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { label: 'Response Time', value: '< 100ms', trend: '+12%', good: true },
+              { label: 'Task Success Rate', value: '98.5%', trend: '+2.3%', good: true },
+              { label: 'Resource Efficiency', value: '87%', trend: '+5%', good: true },
+            ].map((insight, i) => (
+              <div
+                key={insight.label}
+                className="p-6 rounded-xl bg-[#F5F1E7] border-2 border-transparent hover:border-[#FF8A65]/30 transition-all"
+                style={{ animation: `fadeInUp 0.6s ease-out ${i * 0.1}s both` }}
+              >
+                <p className="text-[#153B44]/60 text-sm font-medium mb-2">{insight.label}</p>
+                <div className="flex items-end justify-between">
+                  <h4 className="text-3xl font-bold text-[#153B44]">{insight.value}</h4>
+                  <span className={`text-sm font-semibold ${insight.good ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {insight.trend}
+                  </span>
                 </div>
-                Recent Activity
-              </h3>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { event: 'Node registered', detail: 'TDESK joined the cluster', time: '2m ago', color: 'blue' },
-                { event: 'Job completed', detail: 'frame_rendering #ad4971', time: '5m ago', color: 'emerald' },
-                { event: 'Task assigned', detail: '5 tasks distributed', time: '8m ago', color: 'purple' },
-                { event: 'Heartbeat received', detail: 'All nodes healthy', time: '10m ago', color: 'pink' },
-              ].map((activity, i) => (
-                <div 
-                  key={i}
-                  className="flex items-center gap-4 p-3 rounded-xl bg-slate-800/30 border border-slate-700/30 hover:border-slate-600 hover:bg-slate-800/50 transition-all duration-300"
-                  style={{ animation: `slideInRight 0.5s ease-out ${i * 0.1}s both` }}
-                >
-                  <div className={`w-2 h-2 rounded-full bg-${activity.color}-400 animate-pulse`}></div>
-                  <div className="flex-1">
-                    <p className="text-white font-medium text-sm">{activity.event}</p>
-                    <p className="text-slate-400 text-xs">{activity.detail}</p>
-                  </div>
-                  <span className="text-slate-500 text-xs">{activity.time}</span>
-                </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 1s ease-out;
-        }
-      `}</style>
     </DashboardLayout>
   );
 }
