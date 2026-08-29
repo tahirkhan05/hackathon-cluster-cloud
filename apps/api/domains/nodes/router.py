@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from database import get_db
-from domains.nodes.models import NodeStatus
+from domains.nodes.models import NodeStatus, Node
 from domains.nodes.schemas import NodeRegister, NodeResponse, NodeHeartbeat, NodeListResponse
 from domains.nodes.service import NodeService
 from domains.nodes.failure_detector import FailureDetector
@@ -65,8 +65,8 @@ async def node_heartbeat(
     try:
         result = NodeService.process_heartbeat(db, node_id, heartbeat)
         
-        node = db.query(NodeService.model).filter_by(node_id=node_id).first()
-        if node and node.status != NodeStatus.HEALTHY:
+        node = db.query(Node).filter_by(node_id=node_id).first()
+        if node:
             event = EventFactory.node_heartbeat(
                 node_id=node_id,
                 status=node.status.value
