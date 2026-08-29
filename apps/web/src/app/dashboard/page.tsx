@@ -291,7 +291,7 @@ export default function DashboardPage() {
           </Card>
 
           <Card className="border-slate-200 hover:shadow-md transition-all cursor-pointer group hover:border-purple-200">
-            <Link href="/balance">
+            <Link href="/billing">
               <CardBody className="text-center py-8">
                 <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-fuchsia-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:from-purple-200 group-hover:to-fuchsia-200 transition-colors">
                   <TrendingUp className="w-7 h-7 text-purple-600" />

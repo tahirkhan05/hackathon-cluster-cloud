@@ -231,11 +231,11 @@ export function getWebSocketClient(options?: WebSocketClientOptions): WebSocketC
 export function useRealtimeEvents(
   eventType: string | string[],
   handler: EventHandler
-): void {
+): () => void {
   const client = getWebSocketClient();
   
   if (typeof window === 'undefined') {
-    return;
+    return () => {};
   }
 
   const eventTypes = Array.isArray(eventType) ? eventType : [eventType];

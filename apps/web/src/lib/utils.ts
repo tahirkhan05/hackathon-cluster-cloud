@@ -63,7 +63,6 @@ export function getStatusColor(status: string): string {
     OFFLINE: 'bg-gray-100 text-gray-500',
     
     DETECTED: 'bg-red-100 text-red-700',
-    RECOVERING: 'bg-yellow-100 text-yellow-700',
     RESOLVED: 'bg-green-100 text-green-700',
   };
 
