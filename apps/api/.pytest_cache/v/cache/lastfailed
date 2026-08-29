@@ -1,3 +1,10 @@
 {
-  "test_scheduler.py": true
+  "test_scheduler.py": true,
+  "test_ai_agents.py": true,
+  "test_economic_system.py": true,
+  "test_failure_detection.py": true,
+  "test_job_task_state.py": true,
+  "test_nodes.py": true,
+  "test_recovery.py": true,
+  "test_security.py": true
 }
