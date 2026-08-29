@@ -42,7 +42,7 @@ class HeartbeatManager:
                     "current_task_count": self.current_task_count,
                     "is_healthy": self.is_healthy
                 },
-                headers={"X-Node-Agent-Key": self.config.api_key},
+                headers={"X-API-Key": self.config.api_key},
                 timeout=self.config.heartbeat_timeout_seconds
             )
             

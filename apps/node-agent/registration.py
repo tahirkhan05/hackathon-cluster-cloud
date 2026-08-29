@@ -53,7 +53,7 @@ class RegistrationManager:
                         "max_concurrent_tasks": self.config.max_concurrent_tasks,
                         "cost_per_task_clstr": self.config.cost_per_task_clstr
                     },
-                    headers={"X-Node-Agent-Key": self.config.api_key},
+                    headers={"X-API-Key": self.config.api_key},
                     timeout=10
                 )
                 
