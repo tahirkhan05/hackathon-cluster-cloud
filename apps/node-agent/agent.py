@@ -1,32 +1,31 @@
 """
-ClusterCloud Node Agent - Phase 1
+ClusterCloud Node Agent - Phase 5
 
-Registers with control plane and maintains heartbeat.
+Registers with control plane, maintains heartbeat, and executes rendering tasks.
 Discovers hardware capabilities and reports system status.
 
-Phase 1 scope:
+Features:
 - Node configuration
 - Hardware discovery
 - Registration with retry
 - Heartbeat lifecycle
+- Task execution with progress reporting
+- Distributed frame rendering
 - Graceful shutdown
 - Structured logging
-
-Phase 2 will add:
-- Task execution
-- Docker isolation
-- Failure simulation
 """
 import sys
 import signal
 import time
 import logging
+import threading
 from typing import Optional
 
 from config import AgentConfig
 from hardware import HardwareDiscovery
 from registration import RegistrationManager
 from heartbeat import HeartbeatManager
+from executor import TaskExecutor
 
 # Configure structured logging
 logging.basicConfig(
@@ -47,8 +46,9 @@ class NodeAgent:
     1. Load configuration from environment
     2. Discover hardware capabilities
     3. Register with control plane (with retry)
-    4. Enter heartbeat loop
-    5. Handle graceful shutdown on SIGINT/SIGTERM
+    4. Start task execution thread
+    5. Enter heartbeat loop
+    6. Handle graceful shutdown on SIGINT/SIGTERM
     """
     
     def __init__(self):
@@ -56,8 +56,10 @@ class NodeAgent:
         self.capabilities: Optional[dict] = None
         self.registration_manager: Optional[RegistrationManager] = None
         self.heartbeat_manager: Optional[HeartbeatManager] = None
+        self.task_executor: Optional[TaskExecutor] = None
         self.running = False
         self.start_time: Optional[float] = None
+        self.task_thread: Optional[threading.Thread] = None
         
         # Setup signal handlers
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -75,7 +77,7 @@ class NodeAgent:
         Returns:
             True if initialization succeeded
         """
-        logger.info("🚀 ClusterCloud Node Agent - Phase 1")
+        logger.info("🚀 ClusterCloud Node Agent - Phase 5 (Distributed Execution)")
         logger.info("=" * 60)
         
         # Load configuration
@@ -129,18 +131,47 @@ class NodeAgent:
         node_id = self.registration_manager.get_node_id()
         self.heartbeat_manager = HeartbeatManager(self.config, node_id)
         
+        # Create task executor
+        self.task_executor = TaskExecutor(
+            control_plane_url=self.config.control_plane_url,
+            node_id=node_id,
+            output_dir="./rendered_frames"
+        )
+        logger.info("Task executor ready")
+        
         return True
+    
+    def _run_task_executor_thread(self):
+        """Run task executor in background thread."""
+        logger.info("Task executor thread started")
+        
+        try:
+            # Run indefinitely until agent stops
+            while self.running:
+                task = self.task_executor.poll_for_task()
+                
+                if task:
+                    self.task_executor.execute_task(task)
+                else:
+                    # No task, wait before polling again
+                    time.sleep(5.0)
+                    
+        except Exception as e:
+            logger.error(f"Error in task executor thread: {e}", exc_info=True)
+        finally:
+            logger.info("Task executor thread stopped")
     
     def run_heartbeat_loop(self):
         """
         Main heartbeat loop.
         
         Sends periodic heartbeats and monitors for failures.
-        Handles demo failure simulation if configured.
+        Runs task execution in separate thread.
         """
         logger.info("=" * 60)
-        logger.info("Entering heartbeat loop")
+        logger.info("Starting agent services")
         logger.info(f"Heartbeat interval: {self.config.heartbeat_interval_seconds}s")
+        logger.info(f"Task execution: ENABLED")
         
         if self.config.simulate_failure:
             logger.warning(
@@ -153,6 +184,13 @@ class NodeAgent:
         self.running = True
         self.start_time = time.time()
         next_heartbeat = time.time()
+        
+        # Start task executor thread
+        self.task_thread = threading.Thread(
+            target=self._run_task_executor_thread,
+            daemon=True
+        )
+        self.task_thread.start()
         
         try:
             while self.running:

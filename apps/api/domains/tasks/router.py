@@ -1,7 +1,8 @@
 """Tasks API router."""
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, Dict, Any
+from datetime import datetime
 
 from database import get_db
 from domains.tasks.models import TaskStatus
@@ -21,6 +22,95 @@ def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
     try:
         task = TaskService.create_task(db, task_data)
         return task
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/poll")
+def poll_for_task(payload: Dict[str, Any] = Body(...), db: Session = Depends(get_db)):
+    """
+    Poll for next available task for a node.
+    
+    Returns task in ASSIGNED status, or 404 if none available.
+    Used by node agents to get work.
+    """
+    node_id = payload.get("node_id")
+    
+    if not node_id:
+        raise HTTPException(status_code=400, detail="node_id required")
+    
+    # Get node's next assigned task
+    task = TaskService.get_next_task_for_node(db, node_id)
+    
+    if not task:
+        raise HTTPException(status_code=404, detail="No tasks available")
+    
+    return task
+
+
+@router.put("/{task_id}/status")
+def update_task_status(
+    task_id: str,
+    payload: Dict[str, Any] = Body(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Update task status and metadata.
+    
+    Used by node agents to report status changes.
+    """
+    new_status = payload.get("status")
+    result = payload.get("result")
+    error_message = payload.get("error_message")
+    
+    if not new_status:
+        raise HTTPException(status_code=400, detail="status required")
+    
+    try:
+        task = TaskService.transition_task_status(
+            db,
+            task_id,
+            TaskStatus[new_status],
+            error_message=error_message,
+            result=result
+        )
+        
+        return {"task_id": task.task_id, "status": task.status}
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except KeyError:
+        raise HTTPException(status_code=400, detail=f"Invalid status: {new_status}")
+
+
+@router.post("/{task_id}/progress")
+def report_progress(
+    task_id: str,
+    payload: Dict[str, Any] = Body(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Report task progress.
+    
+    Used by node agents to send progress updates.
+    """
+    progress_percent = payload.get("progress_percent", 0)
+    message = payload.get("message", "")
+    
+    try:
+        task = TaskService.update_task_progress(
+            db,
+            task_id,
+            progress_percent,
+            message
+        )
+        
+        return {
+            "task_id": task.task_id,
+            "progress_percent": progress_percent,
+            "message": message
+        }
+        
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
