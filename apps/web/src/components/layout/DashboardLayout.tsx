@@ -15,6 +15,7 @@ import { ConnectionStatus } from '@/components/realtime/ConnectionStatus';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Demo', href: '/demo', icon: Zap },
   { name: 'Build Cloud', href: '/build', icon: Zap },
   { name: 'Jobs', href: '/jobs', icon: Activity },
   { name: 'Incidents', href: '/incidents', icon: AlertCircle },

@@ -1,268 +1,397 @@
-# ClusterCloud Demo Script
+# ClusterCloud Hackathon Demo Script
 
-## Preparation (Before Demo)
+**Target Duration:** 8 minutes  
+**Audience:** Hackathon judges and attendees  
+**Goal:** Demonstrate complete distributed cloud with automatic failure recovery
 
-1. **Start all services**
-   ```bash
-   docker-compose up -d
-   python apps/api/main.py
-   ```
+---
 
-2. **Start 4 node agents** (in separate terminals)
-   ```bash
-   # Node A
-   NODE_AGENT_ID=node-a python apps/node-agent/agent.py
+## Pre-Demo Setup (5 minutes before)
 
-   # Node B
-   NODE_AGENT_ID=node-b python apps/node-agent/agent.py
-
-   # Node C (will be killed mid-demo)
-   NODE_AGENT_ID=node-c python apps/node-agent/agent.py
-
-   # Node D
-   NODE_AGENT_ID=node-d python apps/node-agent/agent.py
-   ```
-
-3. **Open dashboard**
-   ```
-   http://localhost:3000
-   ```
-
-4. **Verify all nodes show as "Available"** in dashboard
-
-## Demo Flow (5-7 minutes)
-
-### Act 1: The Setup (1 min)
-
-**Narration**:
-> "ClusterCloud lets anyone share their computer's power and earn CLSTR tokens. Right now we have 4 community members who've installed our Node Agent and are ready to help with rendering."
-
-**Show**: Dashboard with 4 green nodes, capacity overview
-
-**Narration**:
-> "I'm a 3D artist and I need to render 100 frames for my animation. Instead of waiting hours on my laptop, I'll use ClusterCloud."
-
-### Act 2: Job Submission (1 min)
-
-**Action**: Click "New Job" → Select "Frame Rendering"
-
-**Fill form**:
-- Frames: 100
-- Resolution: 1920x1080
-- Quality: High
-- Budget: 1000 CLSTR
-- Deadline: 10 minutes
-
-**Action**: Click "Build My Cloud"
-
-**Show**: AI analysis panel appears
-
-**Narration**:
-> "ClusterCloud's AI analyzes my workload. It recognizes this is perfectly parallelizable—each frame is independent. It recommends splitting the work across all 4 available nodes."
-
-**Show**: 
-- AI reasoning text
-- Recommended distribution: 25 frames per node
-- Estimated cost: 800 CLSTR
-- Estimated time: 5 minutes
-
-**Action**: Click "Approve & Execute"
-
-### Act 3: Execution Begins (1 min)
-
-**Show**: Job status changes to "Executing"
-
-**Narration**:
-> "The system automatically distributes the work. Node A gets frames 1-25, Node B gets 26-50, Node C gets 51-75, and Node D gets 76-100."
-
-**Show**: Task distribution visualization
-
-**Show**: Progress bars filling for each node
-
-**Show**: Live event stream:
-```
-[10:01:23] Task #1 assigned to Node A
-[10:01:23] Task #2 assigned to Node B
-[10:01:23] Task #3 assigned to Node C
-[10:01:23] Task #4 assigned to Node D
-[10:01:25] Node A started rendering frames 1-25
-[10:01:26] Node B started rendering frames 26-50
-[10:01:26] Node C started rendering frames 51-75
-[10:01:27] Node D started rendering frames 76-100
-[10:01:30] Node A completed frame 1
-[10:01:31] Node B completed frame 26
+### 1. Start Backend
+```bash
+cd apps/api
+uvicorn main:app --reload
+# Should be running on http://localhost:8000
 ```
 
-**Narration**:
-> "All nodes are working in parallel. You can see frames completing in real-time."
-
-### Act 4: The Failure (30 seconds)
-
-**Action**: (After ~15 frames completed per node) Kill Node C process
-
-**Show**: Node C turns red in dashboard
-
-**Show**: Incident alert appears:
-```
-⚠️ INCIDENT DETECTED
-Node C heartbeat timeout
-15 frames incomplete (51-65)
-Status: Analyzing recovery options
+### 2. Start Frontend
+```bash
+cd apps/web
+npm run dev
+# Should be running on http://localhost:3000
 ```
 
-**Narration**:
-> "Uh oh—Node C just went offline. Maybe their power went out, or their internet dropped. But watch what happens next."
+### 3. Start Node Agents (3 nodes)
+```bash
+# Terminal 1 - Node 1
+cd apps/node-agent
+python agent.py
 
-### Act 5: Automatic Recovery (1 min)
+# Terminal 2 - Node 2
+cd apps/node-agent
+python agent.py
 
-**Show**: Recovery agent analysis panel appears
-
-**Narration**:
-> "ClusterCloud immediately detects the failure and activates the recovery agent. The AI analyzes which tasks were incomplete and finds the best replacement."
-
-**Show**: AI reasoning:
-```
-Analysis:
-- Node C failed with 15 incomplete frames
-- Nodes A, B, D still operational
-- Node D has highest reliability score (0.98)
-- Node D has available capacity
-- Recommendation: Assign frames 51-65 to Node D
-- Estimated completion: +2 minutes
+# Terminal 3 - Node 3
+cd apps/node-agent
+python agent.py
 ```
 
-**Action**: (Automatic) Recovery executes
+### 4. Verify Setup
+- Open http://localhost:3000/demo
+- Verify all 3 nodes show as HEALTHY
+- Clear any old jobs/incidents
 
-**Show**: Event stream:
+---
+
+## Demo Flow (8 minutes)
+
+### **MINUTE 0-1: Introduction & Problem Statement**
+
+**What to say:**
+> "Traditional cloud platforms force you to be a systems engineer. You need to know instance types, availability zones, auto-scaling groups... it's complex and error-prone.
+>
+> ClusterCloud flips this model. You tell us WHAT you want to render, and we handle EVERYTHING else. No Kubernetes. No AWS Console. Just simple English."
+
+**What to show:**
+- Open http://localhost:3000
+- Show landing page briefly
+- Navigate to /demo
+
+---
+
+### **MINUTE 1-2: Customer Request**
+
+**What to say:**
+> "Let's say I'm a 3D artist. I have 20 frames to render, and I need them in an hour. I have 500 CLSTR tokens. How reliable should it be? 85%."
+
+**What to do:**
+1. Click "Start Demo Job"
+2. Show the job creation form (if using /build instead)
+3. Fill in:
+   - Workload: 3D Rendering
+   - Frames: 20
+   - Deadline: 1 hour
+   - Budget: 500 CLSTR
+   - Reliability: 85%
+
+**What to say:**
+> "That's it. Four questions. No EC2 instances. No YAML files."
+
+---
+
+### **MINUTE 2-3: AI Analysis & Cluster Composition**
+
+**What to show:**
+- Job created
+- Status shows "ANALYZING" then "SCHEDULING"
+- Point to the Activity Feed showing real-time events
+
+**What to say:**
+> "Behind the scenes, our AI analyzes the workload. How much compute? How long per frame? What deadline pressure?
+>
+> Then it composes the perfect cluster. It looks at available nodes, their reliability scores, their costs, and picks the optimal set. All automatic."
+
+**What to point out in Activity Feed:**
+- "Node selected" events
+- "Task assigned" events
+
+---
+
+### **MINUTE 3-4: Live Distributed Execution**
+
+**What to show:**
+- Job progress bar filling up
+- Frames completing in real-time
+- Activity feed showing "task_completed" events
+- Network nodes showing activity
+
+**What to say:**
+> "Now watch the distributed execution. Tasks are being assigned to multiple nodes. They're rendering frames in parallel. This is REAL computation happening across multiple machines.
+>
+> Notice the progress bar updating in real-time. No refresh needed. WebSockets push every event instantly."
+
+**Let this run for ~30 seconds so progress reaches 30-40%**
+
+---
+
+### **MINUTE 4-5: THE DRAMA - Node Failure**
+
+**What to say:**
+> "Here's where it gets interesting. In distributed systems, failures are inevitable. Nodes crash. Networks partition. Hardware fails.
+>
+> Traditional clouds? You're on your own. Configure auto-scaling. Set up health checks. Hope your YAML is right.
+>
+> Watch what ClusterCloud does."
+
+**What to do:**
+1. Click "Simulate Node Failure" button
+2. Confirm the dialog
+
+**What to show immediately:**
+- Node status changes from HEALTHY to UNHEALTHY (red)
+- Incident card appears with "Node Failure Detected"
+- Failed tasks count
+- System pauses briefly
+
+**What to say:**
+> "Within seconds, ClusterCloud detected the failure. It identified which tasks were affected. And now... watch the recovery."
+
+---
+
+### **MINUTE 5-6: AI Recovery Decision**
+
+**What to show:**
+- Incident Recovery Visualization card
+- Failed node on left (red)
+- AI reasoning box appears
+
+**What to say:**
+> "Our AI Recovery Agent analyzes the situation. It looks at:
+> - Which tasks failed
+> - What the remaining deadline is
+> - Which nodes are still healthy
+> - Each node's reliability score
+> - The budget constraints
+>
+> And it makes a decision."
+
+**What to point out in the AI reasoning box:**
+Read the actual AI reasoning aloud. It will say something like:
+> "Node worker-1 failed with 3 tasks in progress. Selected worker-2 as replacement based on high reliability (0.92) and sufficient capacity. Estimated recovery time: 45 seconds."
+
+**What to say:**
+> "The AI chose a replacement node. Not randomly. Based on data. Based on reliability history. This is intelligent infrastructure."
+
+---
+
+### **MINUTE 6-7: Automatic Reassignment**
+
+**What to show:**
+- Replacement node appears on right (blue/green)
+- Progress indicator showing "Reassigning tasks"
+- Activity feed showing:
+  - "replacement_selected"
+  - "task_assigned" (to new node)
+  - "task_completed" (on new node)
+- Job progress bar continues filling
+
+**What to say:**
+> "Tasks are automatically reassigned to the replacement node. No human intervention. No downtime. The job continues.
+>
+> The customer doesn't have to do anything. They don't even need to know there was a failure. The system handled it."
+
+**Let recovery complete - watch progress bar continue**
+
+---
+
+### **MINUTE 7-8: Economic Settlement & Completion**
+
+**What to show:**
+- Incident status changes to "RESOLVED"
+- Economic Settlement section appears
+- Show three numbers:
+  - Provider Penalty: -20 CLSTR
+  - Customer Compensation: +15 CLSTR
+  - Recovery Reward: +10 CLSTR
+
+**What to say:**
+> "And here's the economics. This isn't just infrastructure. It's a marketplace.
+>
+> The failed provider? Penalized. They staked tokens when they joined. 20 CLSTR penalty.
+>
+> The customer? Compensated. 15 CLSTR refunded for the inconvenience.
+>
+> The replacement provider who saved the day? Rewarded. 10 CLSTR bonus on top of their normal payment.
+>
+> Every action is recorded. Every token movement is auditable. Complete transparency."
+
+**What to show:**
+- Job completes (100% progress)
+- Final status: COMPLETED
+- Total cost breakdown
+
+**What to say:**
+> "Job complete. 20 frames rendered. Distributed across multiple nodes. Automatic failure recovery. Fair economic settlement. All in under 2 minutes.
+>
+> The customer asked for 3D rendering. We delivered 3D rendering. Everything else? Handled automatically."
+
+---
+
+## Closing (30 seconds)
+
+**What to say:**
+> "ClusterCloud is distributed computing made simple. You focus on creating. We handle the infrastructure.
+>
+> No Kubernetes. No AWS Console. No YAML files.
+>
+> Just: What do you want to render? We'll build your cloud."
+
+**What to show:**
+- Navigate back to dashboard
+- Show final statistics
+- Point to live activity feed still updating
+
+**End with:**
+> "Thank you. Questions?"
+
+---
+
+## Key Talking Points
+
+### 1. **Customer-First UX**
+- "What are you rendering?" not "What instance type?"
+- 4 questions vs 40 configuration parameters
+- Plain English, not cloud jargon
+
+### 2. **AI-Driven**
+- Workload analysis is AI
+- Cluster composition is AI
+- Recovery decisions are AI
+- But validated by deterministic logic (not blind trust)
+
+### 3. **Distributed Execution**
+- Real parallelism across nodes
+- Real-time progress updates
+- WebSocket event streaming
+
+### 4. **Automatic Recovery**
+- Failure detection in seconds
+- AI chooses replacement
+- Tasks automatically reassigned
+- Job continues without customer action
+
+### 5. **Economic Fairness**
+- Penalties for failures
+- Compensation for customers
+- Rewards for recoverers
+- Complete transparency
+- Auditable ledger
+
+### 6. **Real Technology**
+- FastAPI backend
+- React/Next.js frontend
+- Docker isolation
+- WebSocket real-time
+- AWS Bedrock AI
+- SQLite/PostgreSQL database
+
+---
+
+## Backup Slides / Fallback
+
+### If Demo Breaks
+
+**Have ready:**
+- Video recording of successful demo
+- Architecture diagram
+- Code snippets showing key features
+
+### If Questions Come Up
+
+**Technical:**
+- "How does scheduling work?" → Deterministic scoring algorithm
+- "How does AI work?" → AWS Bedrock with structured outputs
+- "How do you handle security?" → Docker isolation, resource limits, see SECURITY.md
+- "How do economics work?" → Immutable ledger, every transaction recorded
+
+**Business:**
+- "Who is this for?" → Content creators, 3D artists, video editors
+- "Why not AWS?" → AWS is for engineers, ClusterCloud is for creators
+- "What's next?" → GPU support, Blender integration, real money settlements
+
+---
+
+## Common Issues & Fixes
+
+### Nodes Not Registering
+```bash
+# Check control plane is running
+curl http://localhost:8000/health
+
+# Restart node agents
+cd apps/node-agent
+python agent.py
 ```
-[10:03:15] Incident #1: Node C offline
-[10:03:16] Recovery agent analyzing...
-[10:03:17] Frames 51-65 reassigned to Node D
-[10:03:18] Node D accepted additional tasks
-[10:03:19] Rendering resumed
-[10:03:22] Node D completed frame 51
-```
 
-**Show**: Progress bar for Node D extends
+### Job Not Starting
+- Check nodes are HEALTHY in /network
+- Check customer balance in /balance
+- Check logs: `tail -f apps/api/*.log`
 
-**Narration**:
-> "Node D picks up where Node C left off. The job continues without any manual intervention."
+### Failure Simulation Not Working
+- Ensure job is RUNNING (not COMPLETED)
+- Ensure selected node is HEALTHY
+- Check browser console for errors
+- Verify demo endpoint: `curl -X POST http://localhost:8000/api/demo/status`
 
-### Act 6: Economic Consequences (1 min)
+### WebSocket Not Connecting
+- Check /ws/events endpoint: open browser DevTools Network tab
+- Restart backend if needed
+- Clear browser cache
 
-**Show**: Ledger updates panel
+---
 
-**Narration**:
-> "Behind the scenes, ClusterCloud updates everyone's reputation and token balance."
+## Demo Success Criteria
 
-**Show**: Ledger transactions:
-```
-Ledger Updates:
+✅ **Must Show:**
+1. Job creation in seconds
+2. Distributed execution across multiple nodes
+3. Real-time progress updates
+4. Node failure simulation
+5. Automatic recovery
+6. Economic settlement
+7. Job completion
 
-Node C:
-- Reliability: 0.95 → 0.87 (-8%)
-- Penalty: -50 CLSTR (from staked amount)
-- Status: Temporary suspension
+✅ **Must Emphasize:**
+1. Customer-first UX (no cloud jargon)
+2. AI-driven decisions (but validated)
+3. Automatic recovery (no human needed)
+4. Economic fairness (penalties & rewards)
+5. Real technology (not smoke and mirrors)
 
-Customer (You):
-- Compensation: +20 CLSTR (delay refund)
+✅ **Must Avoid:**
+1. Technical jargon (unless asked)
+2. Dwelling on failures
+3. Apologizing for "just a hackathon project"
+4. Overselling capabilities
+5. Ignoring the UI (show, don't just talk)
 
-Node D:
-- Bonus: +30 CLSTR (recovery assist)
-- Reliability: 0.96 → 0.98 (+2%)
-- Status: Trusted provider
+---
 
-Platform:
-- Broker fee: +40 CLSTR
-```
+## Time Management
 
-**Narration**:
-> "Node C loses reputation and pays a penalty. I get compensated for the delay. Node D earns a bonus for helping with recovery. Everything is transparent and automatic."
+| Minute | Content |
+|--------|---------|
+| 0-1 | Introduction & problem |
+| 1-2 | Customer request |
+| 2-3 | AI analysis & cluster composition |
+| 3-4 | Live distributed execution |
+| 4-5 | Node failure (THE DRAMA) |
+| 5-6 | AI recovery decision |
+| 6-7 | Automatic reassignment |
+| 7-8 | Economic settlement & completion |
 
-### Act 7: Completion (30 seconds)
+**Total: 8 minutes**
 
-**Show**: All progress bars reach 100%
+Practice to stay on time. Aim for 7:30 to leave buffer for questions.
 
-**Show**: Job status: "Completed"
+---
 
-**Show**: Final summary:
-```
-Job Completed Successfully
+## Post-Demo
 
-Total frames: 100
-Duration: 7 minutes 23 seconds
-Nodes used: 4 (1 replacement)
-Total cost: 795 CLSTR
-Incidents: 1 (automatically recovered)
+### If Judges Want to Try
+1. Let them click "Simulate Node Failure"
+2. Let them explore the Activity Feed
+3. Show them the code (GitHub)
+4. Walk through SECURITY.md
 
-Downloads: 
-✓ All frames ready (ZIP)
-✓ Composition preview (MP4)
-```
+### If They Want Details
+- Show architecture diagram
+- Explain state machines
+- Discuss future roadmap
+- Demo code quality (tests, types, docs)
 
-**Narration**:
-> "And we're done! All 100 frames rendered successfully, despite the failure. I didn't have to monitor it or intervene. The system handled everything automatically."
+---
 
-**Action**: Click "Download Results"
-
-**Narration**:
-> "That's ClusterCloud—community cloud computing that just works, even when things go wrong."
-
-## Talking Points
-
-### Key Messages
-
-1. **Accessible**: No cloud expertise required
-2. **Resilient**: Automatic failure recovery
-3. **Fair**: Economic incentives for good behavior
-4. **Transparent**: Live visibility into everything
-5. **Intelligent**: AI assists with complex decisions
-6. **Community-driven**: Anyone can contribute resources
-
-### Technical Highlights
-
-- Distributed task execution
-- Real-time heartbeat monitoring
-- Sub-10-second failure detection
-- Deterministic recovery logic
-- Auditable token economics
-- WebSocket live updates
-- Docker isolation for security
-
-### Questions to Anticipate
-
-**Q: What if multiple nodes fail?**
-A: Recovery agent would iterate, finding replacements for each failure until job completes or no nodes remain.
-
-**Q: What prevents malicious providers?**
-A: Stake requirements, reputation tracking, result verification (hash checking in production), and automatic penalties.
-
-**Q: Can this run other workloads besides rendering?**
-A: Yes! The architecture supports any parallelizable workload. Rendering is our MVP focus.
-
-**Q: How does pricing work?**
-A: MVP uses fixed CLSTR rates. Production would use dynamic market-based pricing.
-
-**Q: Is this blockchain?**
-A: No. CLSTR is an internal ledger for the MVP. Future versions could integrate blockchain for decentralized trust.
-
-## Demo Variants
-
-### Quick Demo (2 minutes)
-- Skip AI explanation details
-- Kill node immediately after task assignment
-- Show recovery and completion only
-
-### Technical Deep Dive (15 minutes)
-- Show API endpoints in browser dev tools
-- Display WebSocket messages
-- Show database state changes
-- Explain AI prompts and responses
-- Walk through code architecture
-
-### Business Pitch (10 minutes)
-- Focus on market opportunity
-- Show cost comparison vs AWS/Azure
-- Emphasize community ownership
-- Discuss tokenomics in detail
-- Project future scaling
+**Good luck! You've built something impressive. Show it with confidence.** 🚀
