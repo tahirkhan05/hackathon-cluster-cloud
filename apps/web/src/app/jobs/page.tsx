@@ -20,6 +20,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     async function loadJobs() {
@@ -38,6 +39,43 @@ export default function JobsPage() {
     const interval = setInterval(loadJobs, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const createDemoJob = async () => {
+    setCreating(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/jobs/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer_id: 'customer:customer-demo-001',
+          workload_type: 'frame_rendering',
+          parameters: {
+            project_name: 'Demo Job',
+            total_frames: 10,
+            frame_range_start: 1,
+            frame_range_end: 10,
+          },
+          budget_clstr: 1000,
+        }),
+      });
+
+      if (response.ok) {
+        const newJob = await response.json();
+        setJobs([newJob, ...jobs]);
+        alert('Job created successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to create job: ${error.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to create job:', error);
+      alert('Failed to create job. Check console for details.');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const filteredJobs = Array.isArray(jobs) ? jobs.filter((job) => {
     if (filter === 'all') return true;
@@ -106,12 +144,33 @@ export default function JobsPage() {
     <DashboardLayout>
       <div className="space-y-8 pb-8">
         {/* Header */}
-        <div className="animate-fadeIn">
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-            <div className="w-1.5 h-10 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
-            Jobs Dashboard
-          </h1>
-          <p className="text-slate-400 text-lg">Monitor and manage your distributed workloads</p>
+        <div className="flex items-center justify-between animate-fadeIn">
+          <div>
+            <h1 className="text-4xl font-bold text-[#153B44] mb-2 flex items-center gap-3">
+              <div className="w-1.5 h-10 bg-[#FF6B35] rounded-full"></div>
+              Jobs Dashboard
+            </h1>
+            <p className="text-[#153B44]/60 text-lg">Monitor and manage your distributed workloads</p>
+          </div>
+          
+          {/* Create Job Button */}
+          <button
+            onClick={createDemoJob}
+            disabled={creating}
+            className="flex items-center gap-2 px-6 py-3 bg-[#FF6B35] text-white rounded-full font-semibold hover:-translate-y-1 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {creating ? (
+              <>
+                <Loader className="w-5 h-5 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Zap className="w-5 h-5" />
+                Create Demo Job
+              </>
+            )}
+          </button>
         </div>
 
         {/* Stats Cards */}
