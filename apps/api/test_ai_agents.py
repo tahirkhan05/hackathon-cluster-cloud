@@ -1,5 +1,5 @@
 """
-Tests for AI Agents - Phase 8
+Tests for AI Agents
 
 Tests validation logic and fallback behavior.
 Run with: pytest test_ai_agents.py -v

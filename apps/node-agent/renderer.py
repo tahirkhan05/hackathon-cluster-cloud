@@ -1,5 +1,5 @@
 """
-Simple Frame Renderer - Phase 5
+Simple Frame Renderer
 
 Generates actual image frames using PIL for demonstration.
 Creates realistic CPU/GPU workload for distributed rendering.

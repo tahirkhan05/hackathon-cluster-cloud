@@ -1,5 +1,5 @@
 """
-Task Executor - Phase 5
+Task Executor
 
 Polls for tasks, executes rendering workload, reports progress and results.
 """

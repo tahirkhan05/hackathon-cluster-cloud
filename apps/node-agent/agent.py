@@ -1,5 +1,5 @@
 """
-ClusterCloud Node Agent - Phase 5
+ClusterCloud Node Agent
 
 Registers with control plane, maintains heartbeat, and executes rendering tasks.
 Discovers hardware capabilities and reports system status.

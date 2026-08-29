@@ -1,5 +1,5 @@
 """
-Recovery Service - Phase 7
+Recovery Service
 
 Automatically recovers failed tasks by reassigning to healthy nodes.
 Deterministic validation ensures compatibility and constraints.
@@ -287,7 +287,7 @@ class RecoveryService:
         """
         Select best node from candidates using scoring.
         
-        Scoring factors (same as scheduler Phase 4):
+        Scoring factors:
         - Reliability: 40%
         - Cost: 30%
         - Capacity: 30%

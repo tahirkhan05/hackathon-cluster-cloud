@@ -1,5 +1,5 @@
 """
-Tests for CLSTR Economic System - Phase 9
+Tests for CLSTR Economic System
 
 Run with: pytest test_economic_system.py -v
 """

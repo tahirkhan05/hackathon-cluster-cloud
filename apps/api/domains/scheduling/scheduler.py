@@ -1,5 +1,5 @@
 """
-Deterministic Resource Scheduler - Phase 4
+Deterministic Resource Scheduler
 
 Selects compatible nodes and creates task allocation plan for workloads.
 

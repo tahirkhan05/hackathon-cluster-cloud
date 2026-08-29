@@ -134,7 +134,7 @@ Recommend the best node based on reliability, cost, and capacity."""
         return True, {"validated_node": matching_node}, None
     
     def deterministic_fallback(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Select node using deterministic scoring (Phase 4 algorithm)."""
+        """Select node using deterministic scoring algorithm."""
         
         candidates = context["candidate_nodes"]
         

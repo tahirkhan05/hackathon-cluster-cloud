@@ -1,5 +1,5 @@
 """
-Tests for Deterministic Scheduler - Phase 4
+Tests for Deterministic Scheduler
 
 Run with: pytest test_scheduler.py -v
 """

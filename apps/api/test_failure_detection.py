@@ -1,5 +1,5 @@
 """
-Tests for Failure Detection - Phase 6
+Tests for Failure Detection
 
 Run with: pytest test_failure_detection.py -v
 """

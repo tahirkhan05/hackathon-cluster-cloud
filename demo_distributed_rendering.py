@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-End-to-End Distributed Rendering Demo - Phase 5
+End-to-End Distributed Rendering Demo
 
 Demonstrates the complete flow:
 1. Start API backend
@@ -354,7 +354,7 @@ class DemoOrchestrator:
     def run(self):
         """Run the complete demo."""
         print("\n" + "=" * 80)
-        print("  ClusterCloud Distributed Rendering Demo - Phase 5")
+        print("  ClusterCloud Distributed Rendering Demo")
         print("=" * 80)
         
         try:

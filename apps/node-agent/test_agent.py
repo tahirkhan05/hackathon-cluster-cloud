@@ -1,5 +1,5 @@
 """
-Simple tests for Node Agent Phase 1.
+Simple tests for Node Agent.
 
 Run with: python test_agent.py
 """
@@ -74,7 +74,7 @@ def test_imports():
 def main():
     """Run all tests."""
     print("=" * 60)
-    print("ClusterCloud Node Agent - Phase 1 Tests")
+    print("ClusterCloud Node Agent Tests")
     print("=" * 60)
     
     try:

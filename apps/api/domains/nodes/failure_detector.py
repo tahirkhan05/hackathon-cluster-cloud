@@ -1,5 +1,5 @@
 """
-Failure Detection Service - Phase 6
+Failure Detection Service
 
 Detects node failures based on heartbeat timeouts.
 Creates incidents and marks nodes as unavailable.

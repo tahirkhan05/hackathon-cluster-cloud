@@ -1,5 +1,5 @@
 """
-CLSTR Economic System - Phase 9
+CLSTR Economic System
 
 Manages wallets, transactions, rewards, penalties, and economic flows.
 All operations are auditable and idempotent.

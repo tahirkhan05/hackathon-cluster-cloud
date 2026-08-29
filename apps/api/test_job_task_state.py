@@ -1,5 +1,5 @@
 """
-Tests for Job and Task State Machines - Phase 3
+Tests for Job and Task State Machines
 
 Run with: pytest test_job_task_state.py -v
 """

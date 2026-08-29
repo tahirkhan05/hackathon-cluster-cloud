@@ -1,5 +1,5 @@
 """
-Tests for Self-Healing Recovery - Phase 7
+Tests for Self-Healing Recovery
 
 Run with: pytest test_recovery.py -v
 """

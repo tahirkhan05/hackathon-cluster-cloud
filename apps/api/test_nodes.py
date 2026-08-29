@@ -1,5 +1,5 @@
 """
-Tests for Node Registration and Heartbeat - Phase 2
+Tests for Node Registration and Heartbeat
 
 Run with: pytest test_nodes.py -v
 """
