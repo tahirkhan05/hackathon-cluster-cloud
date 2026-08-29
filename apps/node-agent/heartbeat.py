@@ -79,12 +79,12 @@ class HeartbeatManager:
         
         if self.consecutive_failures >= self.config.max_heartbeat_failures:
             logger.error(
-                f"❌ Heartbeat failed {self.consecutive_failures} times "
+                f"[HEARTBEAT] Failed {self.consecutive_failures} times "
                 f"consecutively ({reason})"
             )
         else:
             logger.warning(
-                f"⚠️  Heartbeat failed ({reason}), "
+                f"[HEARTBEAT] Failed ({reason}), "
                 f"attempt {self.consecutive_failures}/{self.config.max_heartbeat_failures}"
             )
     

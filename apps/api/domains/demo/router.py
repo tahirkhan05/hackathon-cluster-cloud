@@ -1,7 +1,7 @@
 """
 Demo endpoints for hackathon presentation.
 
-⚠️ WARNING: These endpoints should be DISABLED in production.
+WARNING: These endpoints should be DISABLED in production.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session

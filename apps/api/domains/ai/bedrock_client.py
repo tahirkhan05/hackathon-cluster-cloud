@@ -49,14 +49,14 @@ class BedrockClient:
             self.client = boto3.client("bedrock-runtime", **session_kwargs)
             self.available = True
             
-            logger.info(f"✅ Bedrock client initialized (region: {aws_region}, model: {model_id})")
+            logger.info(f"[BEDROCK] Client initialized (region: {aws_region}, model: {model_id})")
             
         except ImportError:
-            logger.warning("⚠️ boto3 not installed, Bedrock unavailable (fallback mode)")
+            logger.warning("[BEDROCK] boto3 not installed, using fallback mode")
             self.available = False
             
         except Exception as e:
-            logger.warning(f"⚠️ Bedrock initialization failed: {e} (fallback mode)")
+            logger.warning(f"[BEDROCK] Initialization failed: {e} (fallback mode)")
             self.available = False
     
     def is_available(self) -> bool:

@@ -70,10 +70,10 @@ export default function DashboardPage() {
       <DashboardLayout>
         <div className="space-y-6">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
+            <div className="h-8 bg-slate-200 rounded w-64 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+                <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
               ))}
             </div>
           </div>
@@ -85,99 +85,91 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Welcome back
+            <h1 className="text-2xl font-semibold text-slate-900">
+              System Overview
             </h1>
-            <p className="text-gray-600 mt-1">
-              Your distributed cloud is ready to build
+            <p className="text-slate-600 mt-1 text-sm">
+              Monitor your distributed infrastructure and workload execution
             </p>
           </div>
           <Link href="/build">
-            <Button size="lg" className="gap-2">
-              <Zap className="w-5 h-5" />
-              Build My Cloud
+            <Button size="lg" className="gap-2 shadow-md">
+              <Zap className="w-4 h-4" />
+              Create Workload
             </Button>
           </Link>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Balance */}
-          <Card className="bg-gradient-to-br from-primary-500 to-primary-700 border-0 text-white">
+          <Card className="bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 border-0 text-white shadow-lg">
             <CardBody className="space-y-2">
-              <div className="flex items-center gap-2 text-primary-100">
+              <div className="flex items-center gap-2 text-indigo-100">
                 <TrendingUp className="w-4 h-4" />
-                <span className="text-sm font-medium">Balance</span>
+                <span className="text-xs font-medium uppercase tracking-wide">Account Balance</span>
               </div>
               <div className="text-3xl font-bold">
                 {formatCLSTR(balance)}
               </div>
-              <div className="text-sm text-primary-100">
-                Available to spend
+              <div className="text-sm text-indigo-100">
+                Available credit
               </div>
             </CardBody>
           </Card>
 
-          {/* Active Jobs */}
-          <Card>
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardBody className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-500">
+              <div className="flex items-center gap-2 text-slate-500">
                 <Activity className="w-4 h-4" />
-                <span className="text-sm font-medium">Active Jobs</span>
+                <span className="text-xs font-medium uppercase tracking-wide">Active Workloads</span>
               </div>
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-3xl font-bold text-slate-900">
                 {stats?.active_jobs || 0}
               </div>
-              <div className="text-sm text-gray-500">
-                {stats?.total_jobs || 0} total jobs
+              <div className="text-sm text-slate-500">
+                {stats?.total_jobs || 0} total executed
               </div>
             </CardBody>
           </Card>
 
-          {/* Network Health */}
-          <Card>
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardBody className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-500">
+              <div className="flex items-center gap-2 text-slate-500">
                 <Server className="w-4 h-4" />
-                <span className="text-sm font-medium">Network</span>
+                <span className="text-xs font-medium uppercase tracking-wide">Compute Nodes</span>
               </div>
-              <div className="text-3xl font-bold text-gray-900">
-                {stats?.healthy_nodes || 0}/{stats?.total_nodes || 0}
+              <div className="text-3xl font-bold text-slate-900">
+                {stats?.healthy_nodes || 0}<span className="text-xl text-slate-400">/{stats?.total_nodes || 0}</span>
               </div>
-              <div className="text-sm text-green-600 font-medium">
-                Healthy nodes
+              <div className="text-sm text-emerald-600 font-medium">
+                Operational
               </div>
             </CardBody>
           </Card>
 
-          {/* Tasks Completed */}
-          <Card>
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardBody className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-500">
+              <div className="flex items-center gap-2 text-slate-500">
                 <CheckCircle2 className="w-4 h-4" />
-                <span className="text-sm font-medium">Completed</span>
+                <span className="text-xs font-medium uppercase tracking-wide">Tasks Processed</span>
               </div>
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-3xl font-bold text-slate-900">
                 {stats?.total_tasks_completed || 0}
               </div>
-              <div className="text-sm text-gray-500">Total tasks</div>
+              <div className="text-sm text-slate-500">Lifetime total</div>
             </CardBody>
           </Card>
         </div>
 
-        {/* Two Column Layout: Jobs + Activity Feed */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Jobs - Takes 2 columns */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader className="flex items-center justify-between">
-                <CardTitle>Recent Jobs</CardTitle>
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <CardTitle className="text-slate-900">Recent Workloads</CardTitle>
                 <Link
                   href="/jobs"
-                  className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
                 >
                   View all
                   <ArrowRight className="w-4 h-4" />
@@ -185,23 +177,25 @@ export default function DashboardPage() {
               </CardHeader>
               <CardBody className="p-0">
                 {recentJobs.length === 0 ? (
-                  <div className="px-6 py-12 text-center">
-                    <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No jobs yet
+                  <div className="px-6 py-16 text-center">
+                    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Activity className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">
+                      No workloads executed
                     </h3>
-                    <p className="text-gray-600 mb-6">
-                      Build your first cloud to get started
+                    <p className="text-slate-600 mb-6 text-sm">
+                      Deploy your first distributed workload to see metrics here
                     </p>
                     <Link href="/build">
                       <Button>
                         <Zap className="w-4 h-4 mr-2" />
-                        Build My Cloud
+                        Create Workload
                       </Button>
                     </Link>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-slate-100">
                     {recentJobs.map((job) => {
                       const progress = calculateProgress(
                         job.completed_frames,
@@ -212,12 +206,12 @@ export default function DashboardPage() {
                         <Link
                           key={job.job_id}
                           href={`/jobs/${job.job_id}`}
-                          className="block px-6 py-4 hover:bg-gray-50 transition-colors"
+                          className="block px-6 py-5 hover:bg-slate-50 transition-colors"
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-1">
-                                <h4 className="font-semibold text-gray-900">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="font-semibold text-slate-900">
                                   {job.workload_type}
                                 </h4>
                                 <Badge
@@ -226,29 +220,29 @@ export default function DashboardPage() {
                                   {job.status}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-gray-600">
-                                <span className="flex items-center gap-1">
+                              <div className="flex items-center gap-6 text-sm text-slate-600">
+                                <span className="flex items-center gap-1.5">
                                   <Activity className="w-3.5 h-3.5" />
-                                  {job.completed_frames}/{job.total_frames} frames
+                                  {job.completed_frames}/{job.total_frames} tasks
                                 </span>
-                                <span className="flex items-center gap-1">
+                                <span className="flex items-center gap-1.5">
                                   <Clock className="w-3.5 h-3.5" />
                                   {formatTimestamp(job.created_at)}
                                 </span>
                               </div>
                             </div>
                             <div className="text-right ml-6">
-                              <div className="text-lg font-semibold text-gray-900">
+                              <div className="text-lg font-semibold text-slate-900">
                                 {formatCLSTR(job.total_budget_clstr)}
                               </div>
-                              <div className="text-sm text-gray-500">Budget</div>
+                              <div className="text-sm text-slate-500">Allocated</div>
                             </div>
                           </div>
                           <ProgressBar value={progress} size="sm" />
                           {job.failed_frames > 0 && (
-                            <div className="flex items-center gap-1 text-sm text-orange-600 mt-2">
+                            <div className="flex items-center gap-1.5 text-sm text-amber-600 mt-3">
                               <AlertTriangle className="w-3.5 h-3.5" />
-                              {job.failed_frames} failed frames
+                              {job.failed_frames} failed tasks
                             </div>
                           )}
                         </Link>
@@ -260,55 +254,53 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Live Activity Feed - Takes 1 column */}
           <ActivityFeed />
         </div>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+          <Card className="border-slate-200 hover:shadow-md transition-all cursor-pointer group hover:border-indigo-200">
             <Link href="/build">
               <CardBody className="text-center py-8">
-                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-200 transition-colors">
-                  <Zap className="w-6 h-6 text-primary-600" />
+                <div className="w-14 h-14 bg-gradient-to-br from-indigo-100 to-violet-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:from-indigo-200 group-hover:to-violet-200 transition-colors">
+                  <Zap className="w-7 h-7 text-indigo-600" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">
-                  Build New Cloud
+                <h3 className="font-semibold text-slate-900 mb-2">
+                  Deploy Workload
                 </h3>
-                <p className="text-sm text-gray-600">
-                  Create a distributed workload
+                <p className="text-sm text-slate-600">
+                  Configure and execute distributed tasks
                 </p>
               </CardBody>
             </Link>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+          <Card className="border-slate-200 hover:shadow-md transition-all cursor-pointer group hover:border-emerald-200">
             <Link href="/network">
               <CardBody className="text-center py-8">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200 transition-colors">
-                  <Server className="w-6 h-6 text-green-600" />
+                <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:from-emerald-200 group-hover:to-teal-200 transition-colors">
+                  <Server className="w-7 h-7 text-emerald-600" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">
-                  View Network
+                <h3 className="font-semibold text-slate-900 mb-2">
+                  Network Status
                 </h3>
-                <p className="text-sm text-gray-600">
-                  See available compute nodes
+                <p className="text-sm text-slate-600">
+                  Monitor compute node availability
                 </p>
               </CardBody>
             </Link>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+          <Card className="border-slate-200 hover:shadow-md transition-all cursor-pointer group hover:border-purple-200">
             <Link href="/balance">
               <CardBody className="text-center py-8">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
-                  <TrendingUp className="w-6 h-6 text-purple-600" />
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-fuchsia-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:from-purple-200 group-hover:to-fuchsia-200 transition-colors">
+                  <TrendingUp className="w-7 h-7 text-purple-600" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">
-                  View Balance
+                <h3 className="font-semibold text-slate-900 mb-2">
+                  Billing Overview
                 </h3>
-                <p className="text-sm text-gray-600">
-                  Track your CLSTR spending
+                <p className="text-sm text-slate-600">
+                  Review token usage and spending
                 </p>
               </CardBody>
             </Link>

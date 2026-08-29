@@ -36,13 +36,13 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     """Application lifespan manager."""
-    logger.info("🚀 Starting ClusterCloud API...")
+    logger.info("[STARTUP] Initializing ClusterCloud API...")
     
     # Initialize database
     try:
         Base.metadata.create_all(bind=engine)
         init_database()
-        logger.info("✅ Database initialized")
+        logger.info("[STARTUP] Database initialized successfully")
     except Exception as e:
         logger.warning(f"Database init: {e}")
     

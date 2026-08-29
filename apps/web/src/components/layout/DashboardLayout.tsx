@@ -4,46 +4,53 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  Zap,
+  Layers,
   Activity,
-  AlertCircle,
-  Wallet,
+  AlertTriangle,
+  DollarSign,
   Network,
+  Play,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConnectionStatus } from '@/components/realtime/ConnectionStatus';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Demo', href: '/demo', icon: Zap },
-  { name: 'Build Cloud', href: '/build', icon: Zap },
+  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Workloads', href: '/build', icon: Layers },
   { name: 'Jobs', href: '/jobs', icon: Activity },
-  { name: 'Incidents', href: '/incidents', icon: AlertCircle },
   { name: 'Network', href: '/network', icon: Network },
-  { name: 'Balance', href: '/balance', icon: Wallet },
+  { name: 'Incidents', href: '/incidents', icon: AlertTriangle },
+  { name: 'Billing', href: '/balance', icon: DollarSign },
+  { name: 'Demo', href: '/demo', icon: Play },
 ];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="mx-auto px-6 py-4">
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div className="mx-auto px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link href="/dashboard" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-12">
+              <Link href="/dashboard" className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                    <div className="w-5 h-5 border-2 border-white rounded-sm"></div>
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white"></div>
                 </div>
-                <span className="text-xl font-bold text-gray-900">
-                  ClusterCloud
-                </span>
+                <div>
+                  <div className="text-lg font-semibold text-slate-900 tracking-tight">
+                    ClusterCloud
+                  </div>
+                  <div className="text-xs text-slate-500 -mt-0.5">
+                    Control Plane
+                  </div>
+                </div>
               </Link>
 
-              {/* Navigation */}
-              <nav className="hidden md:flex items-center gap-1">
+              <nav className="hidden lg:flex items-center gap-2">
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
@@ -53,10 +60,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                        'flex items-center gap-2.5 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200',
                         isActive
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                          ? 'bg-indigo-50 text-indigo-700 shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                       )}
                     >
                       <Icon className="w-4 h-4" />
@@ -67,27 +74,30 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </nav>
             </div>
 
-            {/* User section */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-5">
               <ConnectionStatus />
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">
-                  Customer Demo
+              
+              <div className="h-8 w-px bg-slate-200"></div>
+              
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <div className="text-sm font-medium text-slate-900">
+                    Production
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    customer-demo-001
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  customer-demo-001
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md">
+                  PR
                 </div>
-              </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
-                CD
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="mx-auto px-6 py-8 max-w-7xl">{children}</main>
+      <main className="mx-auto px-8 py-8 max-w-[1400px]">{children}</main>
     </div>
   );
 }

@@ -77,7 +77,7 @@ class NodeAgent:
         Returns:
             True if initialization succeeded
         """
-        logger.info("🚀 ClusterCloud Node Agent - Phase 5 (Distributed Execution)")
+        logger.info("[AGENT] ClusterCloud Node Agent - Distributed Execution Engine")
         logger.info("=" * 60)
         
         # Load configuration
@@ -175,7 +175,7 @@ class NodeAgent:
         
         if self.config.simulate_failure:
             logger.warning(
-                f"⚠️  DEMO MODE: Will simulate failure after "
+                f"[DEMO MODE] Will simulate failure after "
                 f"{self.config.failure_after_seconds}s"
             )
         

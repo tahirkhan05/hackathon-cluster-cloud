@@ -62,7 +62,7 @@ class RegistrationManager:
                     self.node_id = data.get("node_id")
                     self.registered = True
                     
-                    logger.info(f"✅ Successfully registered with control plane")
+                    logger.info(f"[REGISTRATION] Successfully registered with control plane")
                     logger.info(f"Node ID: {self.node_id}")
                     logger.info(f"Provider ID: {self.config.provider_id}")
                     
@@ -89,7 +89,7 @@ class RegistrationManager:
                 logger.info(f"Retrying in {delay}s...")
                 time.sleep(delay)
         
-        logger.error("❌ Registration failed after all retries")
+        logger.error("[REGISTRATION] Registration failed after all retries")
         return False
     
     def is_registered(self) -> bool:
