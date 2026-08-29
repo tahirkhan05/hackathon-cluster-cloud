@@ -33,30 +33,6 @@ ClusterCloud is a next-generation distributed computing platform that enables an
 - **Real-time Monitoring**: WebSocket-based live updates and system observability
 - **Fault Tolerance**: Automatic failure detection and cascading impact analysis
 
-## 🏗️ Architecture
-
-ClusterCloud follows a **control plane + worker nodes** architecture:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                   Control Plane (API)                    │
-│  ┌──────────┐ ┌──────────┐ ┌─────────┐ ┌──────────┐   │
-│  │Scheduling│ │ Ledger   │ │Recovery │ │WebSocket │   │
-│  │  Engine  │ │  System  │ │  Agent  │ │  Server  │   │
-│  └──────────┘ └──────────┘ └─────────┘ └──────────┘   │
-└─────────────────────────────────────────────────────────┘
-            │                    ▲
-            │ Task Distribution  │ Heartbeats & Status
-            ▼                    │
-┌────────────────────────────────────────────────────────┐
-│                    Worker Nodes                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
-│  │  Node 1  │  │  Node 2  │  │  Node N  │            │
-│  │ Agent    │  │ Agent    │  │ Agent    │            │
-│  └──────────┘  └──────────┘  └──────────┘            │
-└────────────────────────────────────────────────────────┘
-```
-
 ### Workflow Diagram
 
 ![Workflow](./diagrams/Workflow%20drawings.png)
@@ -436,38 +412,6 @@ cluster_cloud/
 └── demo_distributed_rendering.py  # End-to-end demo
 ```
 
-## 🤝 Contributing
-
-We welcome contributions! Here's how to get started:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes**: Follow existing code style
-4. **Test thoroughly**: Ensure all services work
-5. **Commit**: `git commit -m 'Add amazing feature'`
-6. **Push**: `git push origin feature/amazing-feature`
-7. **Open a Pull Request**: Describe your changes
-
-### Development Guidelines
-- Follow Python PEP 8 style for backend code
-- Use TypeScript for frontend development
-- Write clear docstrings and comments
-- Add tests for new features
-- Update documentation as needed
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Built with FastAPI, Next.js, and modern Python
-- AI-powered by AWS Bedrock and Claude
-- Inspired by distributed computing research and blockchain economics
-- Community-driven open source project
-
----
-
-**Built with ❤️ by the ClusterCloud community**
+**Built with ❤️ by the ClusterCloud team**
 
 For questions, issues, or feature requests, please open an issue on GitHub.
