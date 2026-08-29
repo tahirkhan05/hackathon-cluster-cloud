@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: clustercloud_postgres
+    environment:
+      POSTGRES_DB: clustercloud
+      POSTGRES_USER: clustercloud
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clustercloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clustercloud_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: clustercloud_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clustercloud_network
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: clustercloud_api
+    environment:
+      - DATABASE_URL=postgresql://clustercloud:changeme@postgres:5432/clustercloud
+      - REDIS_URL=redis://redis:6379
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app
+    networks:
+      - clustercloud_network
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: clustercloud_web
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - clustercloud_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  clustercloud_network:
+    driver: bridge
+    name: clustercloud_network
