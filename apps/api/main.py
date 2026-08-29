@@ -21,6 +21,7 @@ from domains.ledger.router import router as ledger_router
 from domains.websocket.router import router as websocket_router
 from domains.scheduling.router import router as scheduling_router
 from domains.recovery.router import router as recovery_router
+from domains.stats.router import router as stats_router
 
 
 logging.basicConfig(
@@ -88,6 +89,7 @@ app.include_router(ledger_router, prefix="/api/ledger", tags=["ledger"])
 app.include_router(websocket_router, prefix="/ws", tags=["websocket"])
 app.include_router(scheduling_router, prefix="/api/scheduling", tags=["scheduling"])
 app.include_router(recovery_router, prefix="/api/recovery", tags=["recovery"])
+app.include_router(stats_router, prefix="/api/stats", tags=["stats"])
 
 
 if __name__ == "__main__":
