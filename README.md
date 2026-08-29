@@ -98,38 +98,29 @@ This hackathon MVP demonstrates distributed 3D rendering with:
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.11+
 - Node.js 18+
-- Docker & Docker Compose
-- PostgreSQL (or SQLite for development)
-- AWS credentials with Bedrock access
+- Docker (optional, for workload isolation)
+- AWS credentials with Bedrock access (optional, for AI features)
 
 ### Setup
 
 1. **Clone and configure**
    ```bash
-   git clone <repository-url>
-   cd clustercloud
-   cp .env.example .env
-   # Edit .env with your configuration
+   git clone https://github.com/tahirkhan05/hackathon-cluster-cloud.git
+   cd cluster_cloud
    ```
 
-2. **Start infrastructure**
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Set up backend**
+2. **Set up backend**
    ```bash
    cd apps/api
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install -r requirements.txt
-   alembic upgrade head
    python main.py
    ```
 
-4. **Set up node agent(s)**
+3. **Set up node agent(s)**
    ```bash
    cd apps/node-agent
    python -m venv venv
@@ -138,15 +129,17 @@ This hackathon MVP demonstrates distributed 3D rendering with:
    python agent.py
    ```
 
-5. **Set up frontend**
+4. **Set up frontend**
    ```bash
    cd apps/web
    npm install
    npm run dev
    ```
 
-6. **Access the dashboard**
+5. **Access the dashboard**
    Open http://localhost:3000
+
+**For detailed setup including two-laptop distributed demo, see [docs/RUN_INSTRUCTIONS.md](docs/RUN_INSTRUCTIONS.md)**
 
 ## 🎬 Demo Scenario
 
@@ -174,15 +167,8 @@ clustercloud/
 │   ├── api/              # FastAPI control plane
 │   ├── node-agent/       # Python node worker
 │   └── web/              # Next.js dashboard
-├── packages/
-│   └── shared/           # Shared types and utilities
-├── infrastructure/
-│   ├── docker/           # Container configs
-│   └── aws/              # AWS deployment configs
 ├── docs/                 # Documentation
-├── scripts/              # Utility scripts
-├── tests/                # Integration tests
-└── docker-compose.yml    # Local development stack
+└── docker-compose.yml    # Local development stack (optional)
 ```
 
 ## 🔒 Security (MVP)
