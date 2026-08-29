@@ -9,6 +9,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ActivityFeed } from '@/components/realtime/ActivityFeed';
 import { IncidentRecoveryVisualization } from '@/components/demo/IncidentRecoveryVisualization';
 import { FailureSimulator } from '@/components/demo/FailureSimulator';
+import { ImpactAnalysisPanel } from '@/components/demo/ImpactAnalysisPanel';
 import { api, type Job, type Node, type Incident } from '@/lib/api';
 import { useRealtimeEvent } from '@/hooks/useWebSocket';
 import {
@@ -256,8 +257,22 @@ export default function DemoPage() {
               />
             )}
 
-            {/* Incident Visualization */}
+            {/* Impact Analysis & Recovery (new enhanced panel) */}
             {activeIncident && (
+              <ImpactAnalysisPanel
+                nodeId={activeIncident.node_id || activeIncident.related_node_id}
+                incidentId={activeIncident.incident_id}
+                onExecuteRecovery={() => {
+                  // Refresh data after recovery
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 2000);
+                }}
+              />
+            )}
+
+            {/* Original Incident Visualization (fallback) */}
+            {activeIncident && !activeIncident.node_id && (
               <IncidentRecoveryVisualization incident={activeIncident} />
             )}
 
