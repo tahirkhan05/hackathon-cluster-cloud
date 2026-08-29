@@ -1,6 +1,6 @@
 """Ledger service for CLSTR token operations."""
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -60,3 +60,26 @@ class LedgerService:
         )
         
         return LedgerService.create_transaction(db, transaction)
+    
+    @staticmethod
+    def get_balance(db: Session, account_id: str) -> float:
+        """Get account balance as float."""
+        balance = LedgerService.get_account_balance(db, account_id)
+        return float(balance)
+    
+    @staticmethod
+    def get_transactions(
+        db: Session, 
+        account_id: Optional[str] = None, 
+        limit: int = 20
+    ) -> List[Transaction]:
+        """Get transactions, optionally filtered by account_id."""
+        query = db.query(Transaction)
+        
+        if account_id:
+            query = query.filter(
+                (Transaction.from_account == account_id) | 
+                (Transaction.to_account == account_id)
+            )
+        
+        return query.order_by(Transaction.created_at.desc()).limit(limit).all()
