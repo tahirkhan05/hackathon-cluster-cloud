@@ -16,10 +16,42 @@ def create_job(job_data: JobCreate, db: Session = Depends(get_db)):
     """
     Create a new job in SUBMITTED state.
     
-    Validates workload type and creates initial job record.
+    Validates workload type and creates initial job record + tasks.
     """
     try:
+        # Create job
         job = JobService.create_job(db, job_data)
+        
+        # Create tasks based on workload parameters
+        from domains.tasks.service import TaskService
+        from domains.tasks.schemas import TaskCreate
+        
+        # Get frame count from parameters
+        total_frames = job_data.parameters.get('total_frames', 10)
+        frame_start = job_data.parameters.get('frame_range_start', 1)
+        frame_end = job_data.parameters.get('frame_range_end', total_frames)
+        
+        # Create one task per frame
+        tasks_created = 0
+        for frame_num in range(frame_start, frame_end + 1):
+            task_data = TaskCreate(
+                job_id=job.job_id,
+                task_number=frame_num,
+                task_type=job.workload_type,
+                parameters={
+                    "frame_number": frame_num,
+                    **job_data.parameters
+                }
+            )
+            TaskService.create_task(db, task_data)
+            tasks_created += 1
+        
+        # Update job with task count
+        JobService.update_job_progress(db, job.job_id)
+        
+        # Refresh to get updated counts
+        db.refresh(job)
+        
         return job
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
