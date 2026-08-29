@@ -1,97 +1,102 @@
 """Nodes API router."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
-from datetime import datetime
+from typing import Optional
 
 from database import get_db
-from domains.nodes.models import Node, NodeStatus
+from domains.nodes.models import NodeStatus
 from domains.nodes.schemas import NodeRegister, NodeResponse, NodeHeartbeat, NodeListResponse
-from domains.reliability.models import ReliabilityScore
+from domains.nodes.service import NodeService
 
 router = APIRouter()
 
 
-@router.post("/register", response_model=NodeResponse)
+@router.post("/register", response_model=NodeResponse, status_code=200)
 def register_node(node_data: NodeRegister, db: Session = Depends(get_db)):
-    """Register a new node with the control plane."""
+    """
+    Register a new node or reactivate existing one.
     
-    # Check if node already exists
-    existing = db.query(Node).filter(
-        Node.provider_id == node_data.provider_id
-    ).first()
-    
-    if existing:
-        # Update existing node
-        existing.status = NodeStatus.AVAILABLE
-        existing.last_heartbeat = datetime.utcnow()
-        existing.capabilities = node_data.capabilities
-        db.commit()
-        db.refresh(existing)
-        return existing
-    
-    # Create new node
-    node = Node(
-        provider_id=node_data.provider_id,
-        hostname=node_data.hostname,
-        ip_address=node_data.ip_address,
-        capabilities=node_data.capabilities,
-        max_concurrent_tasks=node_data.max_concurrent_tasks,
-        cost_per_task_clstr=node_data.cost_per_task_clstr,
-        status=NodeStatus.AVAILABLE
-    )
-    
-    db.add(node)
-    db.flush()
-    
-    # Create reliability score
-    reliability = ReliabilityScore(node_id=node.node_id)
-    db.add(reliability)
-    
-    db.commit()
-    db.refresh(node)
-    
-    return node
+    If a node with the same provider_id exists, it will be reactivated
+    with updated capabilities. Otherwise, a new node is created.
+    """
+    try:
+        node = NodeService.register_node(db, node_data)
+        return node
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{node_id}/heartbeat")
-def node_heartbeat(node_id: str, heartbeat: NodeHeartbeat, db: Session = Depends(get_db)):
-    """Record node heartbeat."""
-    node = db.query(Node).filter(Node.node_id == node_id).first()
+def node_heartbeat(
+    node_id: str,
+    heartbeat: NodeHeartbeat,
+    db: Session = Depends(get_db)
+):
+    """
+    Record node heartbeat.
     
-    if not node:
-        raise HTTPException(status_code=404, detail="Node not found")
-    
-    node.last_heartbeat = datetime.utcnow()
-    node.current_task_count = heartbeat.current_task_count
-    node.is_healthy = heartbeat.is_healthy
-    
-    # Update status based on capacity
-    if node.current_task_count >= node.max_concurrent_tasks:
-        node.status = NodeStatus.BUSY
-    elif node.is_healthy:
-        node.status = NodeStatus.AVAILABLE
-    else:
-        node.status = NodeStatus.OFFLINE
-    
-    db.commit()
-    
-    return {"status": "ok", "node_id": node_id}
+    Updates last_heartbeat timestamp and node status based on
+    health and capacity.
+    """
+    try:
+        result = NodeService.process_heartbeat(db, node_id, heartbeat)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/", response_model=NodeListResponse)
-def list_nodes(db: Session = Depends(get_db)):
-    """List all registered nodes."""
-    nodes = db.query(Node).all()
+def list_nodes(
+    status: Optional[NodeStatus] = Query(None, description="Filter by status"),
+    available_only: bool = Query(False, description="Only available nodes"),
+    db: Session = Depends(get_db)
+):
+    """
+    List all registered nodes with optional filtering.
+    
+    Query parameters:
+    - status: Filter by node status (available, busy, offline)
+    - available_only: Only return nodes that can accept tasks
+    """
+    nodes = NodeService.list_nodes(db, status=status, available_only=available_only)
     return {"nodes": nodes, "total": len(nodes)}
+
+
+@router.get("/statistics")
+def get_node_statistics(db: Session = Depends(get_db)):
+    """
+    Get aggregated node statistics.
+    
+    Returns counts by status and overall health metrics.
+    """
+    return NodeService.get_node_statistics(db)
 
 
 @router.get("/{node_id}", response_model=NodeResponse)
 def get_node(node_id: str, db: Session = Depends(get_db)):
-    """Get node details."""
-    node = db.query(Node).filter(Node.node_id == node_id).first()
+    """Get detailed information about a specific node."""
+    node = NodeService.get_node(db, node_id)
     
     if not node:
         raise HTTPException(status_code=404, detail="Node not found")
     
     return node
+
+
+@router.post("/maintenance/detect-stale")
+def detect_stale_nodes(db: Session = Depends(get_db)):
+    """
+    Detect and mark stale nodes as offline.
+    
+    A node is considered stale if its last heartbeat exceeds
+    the configured timeout threshold.
+    
+    This endpoint is intended for periodic maintenance tasks.
+    """
+    count = NodeService.mark_stale_nodes_offline(db)
+    return {
+        "marked_offline": count,
+        "message": f"Marked {count} stale nodes offline"
+    }
