@@ -38,8 +38,7 @@ async def list_transactions(
 @router.get("/balance/{account_id}")
 async def get_balance(account_id: str, db: Session = Depends(get_db)):
     """Get CLSTR balance for account."""
-    service = LedgerService(db)
-    balance = service.get_balance(account_id)
+    balance = LedgerService.get_account_balance(db, account_id)
     return {
         "account_id": account_id,
         "balance": balance

@@ -31,15 +31,24 @@ def poll_for_task(payload: Dict[str, Any] = Body(...), db: Session = Depends(get
     """
     Poll for next available task for a node.
     
-    Returns task in ASSIGNED status, or 404 if none available.
-    Used by node agents to get work.
+    Finds a PENDING task, assigns it to the node, and returns it.
+    Returns 404 if no tasks available.
     """
     node_id = payload.get("node_id")
     
     if not node_id:
         raise HTTPException(status_code=400, detail="node_id required")
     
+    # First check if there are already assigned tasks for this node
     task = TaskService.get_next_task_for_node(db, node_id)
+    
+    # If no assigned tasks, find a PENDING task and assign it
+    if not task:
+        pending_tasks = TaskService.get_pending_tasks(db, limit=1)
+        if pending_tasks:
+            task = pending_tasks[0]
+            # Assign it to this node
+            task = TaskService.assign_task_to_node(db, task.task_id, node_id)
     
     if not task:
         raise HTTPException(status_code=404, detail="No tasks available")
@@ -65,13 +74,22 @@ def update_task_status(
     if not new_status:
         raise HTTPException(status_code=400, detail="status required")
     
+    # Extract result_url from result dict if it's a dict
+    result_url = None
+    if result:
+        if isinstance(result, dict):
+            # Try to get output_path or filename
+            result_url = result.get("output_path") or result.get("filename")
+        elif isinstance(result, str):
+            result_url = result
+    
     try:
         task = TaskService.transition_task_status(
             db,
             task_id,
             TaskStatus[new_status],
             error_message=error_message,
-            result=result
+            result_url=result_url
         )
         
         return {"task_id": task.task_id, "status": task.status}
