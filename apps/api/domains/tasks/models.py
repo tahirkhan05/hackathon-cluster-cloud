@@ -9,12 +9,32 @@ from database import Base
 
 
 class TaskStatus(str, enum.Enum):
-    """Task status lifecycle."""
-    QUEUED = "queued"
+    """
+    Task status lifecycle with explicit state machine.
+    
+    PENDING → ASSIGNED → RUNNING → COMPLETED
+                  ↓         ↓
+                  └── FAILED → RETRYING → ASSIGNED
+                       ↓
+                    (max retries) → FAILED (terminal)
+    """
+    PENDING = "pending"
     ASSIGNED = "assigned"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    RETRYING = "retrying"
+
+
+# Valid task state transitions
+TASK_TRANSITIONS = {
+    TaskStatus.PENDING: [TaskStatus.ASSIGNED, TaskStatus.FAILED],
+    TaskStatus.ASSIGNED: [TaskStatus.RUNNING, TaskStatus.FAILED],
+    TaskStatus.RUNNING: [TaskStatus.COMPLETED, TaskStatus.FAILED],
+    TaskStatus.FAILED: [TaskStatus.RETRYING],  # Can retry if attempts remain
+    TaskStatus.RETRYING: [TaskStatus.ASSIGNED, TaskStatus.FAILED],  # Back to assignment or terminal failure
+    TaskStatus.COMPLETED: [],  # Terminal state
+}
 
 
 class Task(Base):
@@ -30,12 +50,12 @@ class Task(Base):
     job_id = Column(String, ForeignKey("jobs.job_id"), nullable=False, index=True)
     node_id = Column(String, ForeignKey("nodes.node_id"), nullable=True, index=True)
     
-    status = Column(SQLEnum(TaskStatus), default=TaskStatus.QUEUED, index=True)
+    status = Column(SQLEnum(TaskStatus), default=TaskStatus.PENDING, index=True)
     
     # Task sequence number within job
     task_number = Column(Integer, nullable=False)
     
-    # Task-specific parameters (frame_range, input_urls, output_format, etc.)
+    # Task parameters (frame_range, input_urls, output_format, etc.)
     parameters = Column(JSON, nullable=False)
     
     # Retry tracking
@@ -72,3 +92,16 @@ class Task(Base):
         if self.started_at and self.completed_at:
             return (self.completed_at - self.started_at).total_seconds()
         return 0.0
+    
+    def can_transition_to(self, new_status: TaskStatus) -> bool:
+        """Check if transition to new status is valid."""
+        # Special case: FAILED → RETRYING only if can_retry
+        if self.status == TaskStatus.FAILED and new_status == TaskStatus.RETRYING:
+            return self.can_retry
+        
+        return new_status in TASK_TRANSITIONS.get(self.status, [])
+    
+    def is_terminal(self) -> bool:
+        """Check if task is in terminal state."""
+        return (self.status == TaskStatus.COMPLETED or 
+                (self.status == TaskStatus.FAILED and not self.can_retry))
