@@ -11,7 +11,7 @@ import os
 
 from database import get_db
 from domains.nodes.models import Node, NodeStatus
-from domains.incidents.models import Incident, IncidentType, IncidentSeverity, IncidentStatus
+from domains.incidents.models import Incident, IncidentType, IncidentStatus
 from domains.tasks.models import Task, TaskStatus
 from domains.recovery.recovery_service import RecoveryService
 from domains.websocket.events import EventFactory
@@ -84,14 +84,12 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
     
     # Create incident
     incident = Incident(
-        incident_type=IncidentType.NODE_FAILURE,
-        severity=IncidentSeverity.HIGH,
-        status=IncidentStatus.OPEN,
-        related_job_id=job_id,
-        related_node_id=node_id,
-        description=f"Demo: Simulated failure of node {node.name}",
+        incident_type=IncidentType.NODE_CRASH,
+        status=IncidentStatus.DETECTED,
+        node_id=node_id,
+        description=f"Demo: Simulated failure of node {node.provider_id}",
         detected_at=datetime.utcnow(),
-        metadata={
+        context={
             "incomplete_task_ids": [task.task_id for task in active_tasks]
         }
     )

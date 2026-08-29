@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from domains.nodes.models import Node, NodeStatus
 from domains.tasks.models import Task, TaskStatus
 from domains.jobs.models import Job
-from domains.incidents.models import Incident, IncidentStatus, IncidentSeverity
+from domains.incidents.models import Incident, IncidentStatus, IncidentType
 
 logger = logging.getLogger(__name__)
 

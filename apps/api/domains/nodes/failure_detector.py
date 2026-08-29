@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from domains.nodes.models import Node, NodeStatus
 from domains.tasks.models import Task, TaskStatus
-from domains.incidents.models import Incident, IncidentSeverity, IncidentStatus
+from domains.incidents.models import Incident, IncidentType, IncidentStatus
 
 logger = logging.getLogger(__name__)
 
@@ -106,11 +106,10 @@ class FailureDetector:
         
         # Create incident
         incident = Incident(
-            incident_type="node_failure",
-            severity=IncidentSeverity.HIGH if incomplete_tasks else IncidentSeverity.MEDIUM,
+            incident_type=IncidentType.HEARTBEAT_TIMEOUT,
             description=f"Node {node.node_id} ({node.provider_id}) failed: {reason}",
             node_id=node.node_id,
-            metadata={
+            context={
                 "previous_status": old_status.value,
                 "last_heartbeat": node.last_heartbeat_at.isoformat() if node.last_heartbeat_at else None,
                 "incomplete_task_count": len(incomplete_tasks),
@@ -245,13 +244,12 @@ class FailureDetector:
         running_duration = (datetime.utcnow() - task.started_at).total_seconds() if task.started_at else 0
         
         incident = Incident(
-            incident_type="task_timeout",
-            severity=IncidentSeverity.MEDIUM,
+            incident_type=IncidentType.TASK_TIMEOUT,
             description=f"Task {task.task_id} has been running for {running_duration:.0f}s (zombie task)",
             job_id=task.job_id,
             task_id=task.task_id,
             node_id=task.node_id,
-            metadata={
+            context={
                 "task_number": task.task_number,
                 "started_at": task.started_at.isoformat() if task.started_at else None,
                 "running_duration_seconds": running_duration,
