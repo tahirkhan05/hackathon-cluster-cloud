@@ -1,4 +1,4 @@
-# ClusterCloud ☁️
+# ClusterCloud 
 
 > A decentralized community cloud computing marketplace powered by distributed nodes, economic incentives, and AI-driven orchestration.
 
@@ -412,6 +412,38 @@ cluster_cloud/
 └── demo_distributed_rendering.py  # End-to-end demo
 ```
 
-**Built with ❤️ by the ClusterCloud team**
+## 🤝 Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes**: Follow existing code style
+4. **Test thoroughly**: Ensure all services work
+5. **Commit**: `git commit -m 'Add amazing feature'`
+6. **Push**: `git push origin feature/amazing-feature`
+7. **Open a Pull Request**: Describe your changes
+
+### Development Guidelines
+- Follow Python PEP 8 style for backend code
+- Use TypeScript for frontend development
+- Write clear docstrings and comments
+- Add tests for new features
+- Update documentation as needed
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- Built with FastAPI, Next.js, and modern Python
+- AI-powered by AWS Bedrock and Claude
+- Inspired by distributed computing research and blockchain economics
+- Community-driven open source project
+
+---
+
+**Built with ❤️ by the ClusterCloud community**
 
 For questions, issues, or feature requests, please open an issue on GitHub.
