@@ -23,6 +23,7 @@ from domains.scheduling.router import router as scheduling_router
 from domains.recovery.router import router as recovery_router
 from domains.stats.router import router as stats_router
 from domains.demo.router import router as demo_router
+from domains.impact.router import router as impact_router
 
 
 logging.basicConfig(
@@ -92,6 +93,7 @@ app.include_router(scheduling_router, prefix="/api/scheduling", tags=["schedulin
 app.include_router(recovery_router, prefix="/api/recovery", tags=["recovery"])
 app.include_router(stats_router, prefix="/api/stats", tags=["stats"])
 app.include_router(demo_router, prefix="/api/demo", tags=["demo"])
+app.include_router(impact_router, prefix="/api/impact", tags=["impact"])
 
 
 if __name__ == "__main__":
