@@ -11,6 +11,7 @@ import {
   Network,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ConnectionStatus } from '@/components/realtime/ConnectionStatus';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -67,6 +68,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
             {/* User section */}
             <div className="flex items-center gap-4">
+              <ConnectionStatus />
               <div className="text-right">
                 <div className="text-sm font-medium text-gray-900">
                   Customer Demo

@@ -6,6 +6,7 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+import { ActivityFeed } from '@/components/realtime/ActivityFeed';
 import { api, type Job, type Node } from '@/lib/api';
 import {
   formatCLSTR,
@@ -167,93 +168,101 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Recent Jobs */}
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle>Recent Jobs</CardTitle>
-            <Link
-              href="/jobs"
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
-            >
-              View all
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </CardHeader>
-          <CardBody className="p-0">
-            {recentJobs.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No jobs yet
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Build your first cloud to get started
-                </p>
-                <Link href="/build">
-                  <Button>
-                    <Zap className="w-4 h-4 mr-2" />
-                    Build My Cloud
-                  </Button>
+        {/* Two Column Layout: Jobs + Activity Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Jobs - Takes 2 columns */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader className="flex items-center justify-between">
+                <CardTitle>Recent Jobs</CardTitle>
+                <Link
+                  href="/jobs"
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+                >
+                  View all
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {recentJobs.map((job) => {
-                  const progress = calculateProgress(
-                    job.completed_frames,
-                    job.total_frames
-                  );
-
-                  return (
-                    <Link
-                      key={job.job_id}
-                      href={`/jobs/${job.job_id}`}
-                      className="block px-6 py-4 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-1">
-                            <h4 className="font-semibold text-gray-900">
-                              {job.workload_type}
-                            </h4>
-                            <Badge
-                              className={getStatusColor(job.status)}
-                            >
-                              {job.status}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span className="flex items-center gap-1">
-                              <Activity className="w-3.5 h-3.5" />
-                              {job.completed_frames}/{job.total_frames} frames
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5" />
-                              {formatTimestamp(job.created_at)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right ml-6">
-                          <div className="text-lg font-semibold text-gray-900">
-                            {formatCLSTR(job.total_budget_clstr)}
-                          </div>
-                          <div className="text-sm text-gray-500">Budget</div>
-                        </div>
-                      </div>
-                      <ProgressBar value={progress} size="sm" />
-                      {job.failed_frames > 0 && (
-                        <div className="flex items-center gap-1 text-sm text-orange-600 mt-2">
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          {job.failed_frames} failed frames
-                        </div>
-                      )}
+              </CardHeader>
+              <CardBody className="p-0">
+                {recentJobs.length === 0 ? (
+                  <div className="px-6 py-12 text-center">
+                    <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No jobs yet
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Build your first cloud to get started
+                    </p>
+                    <Link href="/build">
+                      <Button>
+                        <Zap className="w-4 h-4 mr-2" />
+                        Build My Cloud
+                      </Button>
                     </Link>
-                  );
-                })}
-              </div>
-            )}
-          </CardBody>
-        </Card>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {recentJobs.map((job) => {
+                      const progress = calculateProgress(
+                        job.completed_frames,
+                        job.total_frames
+                      );
+
+                      return (
+                        <Link
+                          key={job.job_id}
+                          href={`/jobs/${job.job_id}`}
+                          className="block px-6 py-4 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-1">
+                                <h4 className="font-semibold text-gray-900">
+                                  {job.workload_type}
+                                </h4>
+                                <Badge
+                                  className={getStatusColor(job.status)}
+                                >
+                                  {job.status}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-gray-600">
+                                <span className="flex items-center gap-1">
+                                  <Activity className="w-3.5 h-3.5" />
+                                  {job.completed_frames}/{job.total_frames} frames
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  {formatTimestamp(job.created_at)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right ml-6">
+                              <div className="text-lg font-semibold text-gray-900">
+                                {formatCLSTR(job.total_budget_clstr)}
+                              </div>
+                              <div className="text-sm text-gray-500">Budget</div>
+                            </div>
+                          </div>
+                          <ProgressBar value={progress} size="sm" />
+                          {job.failed_frames > 0 && (
+                            <div className="flex items-center gap-1 text-sm text-orange-600 mt-2">
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              {job.failed_frames} failed frames
+                            </div>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Live Activity Feed - Takes 1 column */}
+          <ActivityFeed />
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

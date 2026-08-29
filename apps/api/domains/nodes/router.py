@@ -8,12 +8,14 @@ from domains.nodes.models import NodeStatus
 from domains.nodes.schemas import NodeRegister, NodeResponse, NodeHeartbeat, NodeListResponse
 from domains.nodes.service import NodeService
 from domains.nodes.failure_detector import FailureDetector
+from domains.websocket.events import EventFactory
+from domains.websocket.router import broadcast_event_async
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=NodeResponse, status_code=200)
-def register_node(node_data: NodeRegister, db: Session = Depends(get_db)):
+async def register_node(node_data: NodeRegister, db: Session = Depends(get_db)):
     """
     Register a new node or reactivate existing one.
     
@@ -22,13 +24,24 @@ def register_node(node_data: NodeRegister, db: Session = Depends(get_db)):
     """
     try:
         node = NodeService.register_node(db, node_data)
+        
+        # Broadcast node joined event
+        event = EventFactory.node_joined(
+            node_id=node.node_id,
+            name=node.name,
+            cpu_cores=node.cpu_cores,
+            total_ram_gb=node.total_ram_gb,
+            gpu_info=node.gpu_info
+        )
+        await broadcast_event_async(event)
+        
         return node
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{node_id}/heartbeat")
-def node_heartbeat(
+async def node_heartbeat(
     node_id: str,
     heartbeat: NodeHeartbeat,
     db: Session = Depends(get_db)
@@ -41,6 +54,16 @@ def node_heartbeat(
     """
     try:
         result = NodeService.process_heartbeat(db, node_id, heartbeat)
+        
+        # Broadcast heartbeat event (only for status changes to reduce noise)
+        node = db.query(NodeService.model).filter_by(node_id=node_id).first()
+        if node and node.status != NodeStatus.HEALTHY:
+            event = EventFactory.node_heartbeat(
+                node_id=node_id,
+                status=node.status.value
+            )
+            await broadcast_event_async(event)
+        
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
