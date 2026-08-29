@@ -19,9 +19,20 @@ class Settings(BaseSettings):
     # Database Configuration
     DATABASE_URL: str = "sqlite:///./clustercloud.db"
     
-    # Authentication
+    # Authentication & Security
     JWT_SECRET: str = "your-secret-key-here-change-in-production"
-    API_KEY_NODE_AGENT: str = "your-node-agent-api-key-here"
+    NODE_API_KEY: Optional[str] = None  # Master API key for node authentication
+    ENABLE_NODE_AUTH: bool = False  # Enable in production
+    
+    # Resource Limits (MVP - soft limits)
+    MAX_TASK_MEMORY_MB: int = 2048  # 2GB per task
+    MAX_TASK_CPU_CORES: float = 2.0  # 2 CPU cores per task
+    MAX_TASK_DISK_MB: int = 5120  # 5GB disk per task
+    
+    # Security Settings
+    ENABLE_DOCKER_ISOLATION: bool = True
+    DOCKER_SECURITY_OPT: str = "no-new-privileges:true"
+    EPHEMERAL_FILE_RETENTION_HOURS: int = 24
     
     # AWS Bedrock Configuration
     AWS_REGION: str = "us-east-1"

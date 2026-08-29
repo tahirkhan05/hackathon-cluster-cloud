@@ -10,14 +10,22 @@ from domains.nodes.service import NodeService
 from domains.nodes.failure_detector import FailureDetector
 from domains.websocket.events import EventFactory
 from domains.websocket.router import broadcast_event_async
+from domains.auth import validate_node_api_key
+from config import settings
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=NodeResponse, status_code=200)
-async def register_node(node_data: NodeRegister, db: Session = Depends(get_db)):
+async def register_node(
+    node_data: NodeRegister,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(validate_node_api_key) if settings.ENABLE_NODE_AUTH else None
+):
     """
     Register a new node or reactivate existing one.
+    
+    Requires API key authentication if ENABLE_NODE_AUTH=true.
     
     If a node with the same provider_id exists, it will be reactivated
     with updated capabilities. Otherwise, a new node is created.
@@ -44,10 +52,13 @@ async def register_node(node_data: NodeRegister, db: Session = Depends(get_db)):
 async def node_heartbeat(
     node_id: str,
     heartbeat: NodeHeartbeat,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api_key: str = Depends(validate_node_api_key) if settings.ENABLE_NODE_AUTH else None
 ):
     """
     Record node heartbeat.
+    
+    Requires API key authentication if ENABLE_NODE_AUTH=true.
     
     Updates last_heartbeat timestamp and node status based on
     health and capacity.
