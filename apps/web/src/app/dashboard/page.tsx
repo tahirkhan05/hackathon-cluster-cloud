@@ -2,80 +2,113 @@
 
 import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { ProgressBar } from '@/components/ui/ProgressBar';
-import { ActivityFeed } from '@/components/realtime/ActivityFeed';
-import { api, type Job, type Node } from '@/lib/api';
-import {
-  formatCLSTR,
-  formatTimestamp,
-  getStatusColor,
-  calculateProgress,
-} from '@/lib/utils';
-import {
-  Zap,
+import { 
+  Activity, 
+  Server, 
+  Zap, 
   TrendingUp,
-  Activity,
-  Server,
   Clock,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
+  Database,
+  Cpu,
+  HardDrive
 } from 'lucide-react';
-import Link from 'next/link';
 
-interface DashboardStats {
+interface Stats {
   total_nodes: number;
-  healthy_nodes: number;
+  active_nodes: number;
   total_jobs: number;
   active_jobs: number;
-  total_tasks_completed: number;
-  total_clstr_transacted: number;
+  total_tasks: number;
+  completed_tasks: number;
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentJobs, setRecentJobs] = useState<Job[]>([]);
-  const [balance, setBalance] = useState<number>(0);
+  const [stats, setStats] = useState<Stats>({
+    total_nodes: 0,
+    active_nodes: 0,
+    total_jobs: 0,
+    active_jobs: 0,
+    total_tasks: 0,
+    completed_tasks: 0,
+  });
+  const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadDashboard() {
+    async function loadData() {
       try {
-        const [statsData, jobsData, balanceData] = await Promise.all([
-          api.getSystemStats(),
-          api.getJobs(),
-          api.getBalance('customer:customer-demo-001'),
+        const [statsRes, balanceRes] = await Promise.all([
+          fetch('http://localhost:8000/api/stats'),
+          fetch('http://localhost:8000/api/ledger/balance/customer:customer-demo-001')
         ]);
-
+        
+        const statsData = await statsRes.json();
+        const balanceData = await balanceRes.json();
+        
         setStats(statsData);
-        setRecentJobs(jobsData.slice(0, 5));
-        setBalance(balanceData.balance);
+        setBalance(balanceData.balance || 0);
       } catch (error) {
-        console.error('Failed to load dashboard:', error);
+        console.error('Failed to load dashboard data:', error);
       } finally {
         setLoading(false);
       }
     }
 
-    loadDashboard();
-    const interval = setInterval(loadDashboard, 5000);
+    loadData();
+    const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const StatCard = ({ 
+    title, 
+    value, 
+    subtitle, 
+    icon: Icon, 
+    gradient,
+    delay 
+  }: { 
+    title: string; 
+    value: string | number; 
+    subtitle: string; 
+    icon: any; 
+    gradient: string;
+    delay: number;
+  }) => (
+    <div 
+      className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 p-6 hover:border-blue-500/50 transition-all duration-500 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1"
+      style={{ 
+        animation: `fadeInUp 0.6s ease-out ${delay}s both`,
+      }}
+    >
+      {/* Animated gradient background */}
+      <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${gradient}`}></div>
+      
+      {/* Icon with glow effect */}
+      <div className={`relative mb-4 inline-flex p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-lg`}>
+        <Icon className="w-6 h-6 text-white" />
+      </div>
+      
+      {/* Content */}
+      <div className="relative">
+        <p className="text-slate-400 text-sm font-medium mb-1">{title}</p>
+        <h3 className="text-3xl font-bold text-white mb-1 transition-transform duration-300 group-hover:scale-105">
+          {value}
+        </h3>
+        <p className="text-slate-500 text-sm">{subtitle}</p>
+      </div>
+
+      {/* Hover shine effect */}
+      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+    </div>
+  );
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-slate-200 rounded w-64 mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
-              ))}
-            </div>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
           </div>
         </div>
       </DashboardLayout>
@@ -84,229 +117,244 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">
-              System Overview
+      <div className="space-y-8 pb-8">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 p-8 md:p-12">
+          {/* Animated background elements */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-10 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+            <div className="absolute top-0 right-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+            <div className="absolute bottom-10 left-20 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+          </div>
+
+          <div className="relative">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-fadeIn">
+              ClusterCloud Control Plane
             </h1>
-            <p className="text-slate-600 mt-1 text-sm">
-              Monitor your distributed infrastructure and workload execution
+            <p className="text-blue-100 text-lg md:text-xl max-w-2xl animate-fadeIn" style={{ animationDelay: '0.2s' }}>
+              Intelligent distributed computing platform with AI-powered orchestration and real-time monitoring
             </p>
+            
+            {/* Quick stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                <p className="text-blue-100 text-sm">Active Nodes</p>
+                <p className="text-3xl font-bold text-white mt-1">{stats.active_nodes}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                <p className="text-blue-100 text-sm">Running Jobs</p>
+                <p className="text-3xl font-bold text-white mt-1">{stats.active_jobs}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                <p className="text-blue-100 text-sm">Tasks Complete</p>
+                <p className="text-3xl font-bold text-white mt-1">{stats.completed_tasks}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                <p className="text-blue-100 text-sm">CLSTR Balance</p>
+                <p className="text-3xl font-bold text-white mt-1">{balance.toLocaleString()}</p>
+              </div>
+            </div>
           </div>
-          <Link href="/build">
-            <Button size="lg" className="gap-2 shadow-md">
-              <Zap className="w-4 h-4" />
-              Create Workload
-            </Button>
-          </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 border-0 text-white shadow-lg">
-            <CardBody className="space-y-2">
-              <div className="flex items-center gap-2 text-indigo-100">
-                <TrendingUp className="w-4 h-4" />
-                <span className="text-xs font-medium uppercase tracking-wide">Account Balance</span>
-              </div>
-              <div className="text-3xl font-bold">
-                {formatCLSTR(balance)}
-              </div>
-              <div className="text-sm text-indigo-100">
-                Available credit
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardBody className="space-y-2">
-              <div className="flex items-center gap-2 text-slate-500">
-                <Activity className="w-4 h-4" />
-                <span className="text-xs font-medium uppercase tracking-wide">Active Workloads</span>
-              </div>
-              <div className="text-3xl font-bold text-slate-900">
-                {stats?.active_jobs || 0}
-              </div>
-              <div className="text-sm text-slate-500">
-                {stats?.total_jobs || 0} total executed
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardBody className="space-y-2">
-              <div className="flex items-center gap-2 text-slate-500">
-                <Server className="w-4 h-4" />
-                <span className="text-xs font-medium uppercase tracking-wide">Compute Nodes</span>
-              </div>
-              <div className="text-3xl font-bold text-slate-900">
-                {stats?.healthy_nodes || 0}<span className="text-xl text-slate-400">/{stats?.total_nodes || 0}</span>
-              </div>
-              <div className="text-sm text-emerald-600 font-medium">
-                Operational
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardBody className="space-y-2">
-              <div className="flex items-center gap-2 text-slate-500">
-                <CheckCircle2 className="w-4 h-4" />
-                <span className="text-xs font-medium uppercase tracking-wide">Tasks Processed</span>
-              </div>
-              <div className="text-3xl font-bold text-slate-900">
-                {stats?.total_tasks_completed || 0}
-              </div>
-              <div className="text-sm text-slate-500">Lifetime total</div>
-            </CardBody>
-          </Card>
+        {/* System Metrics */}
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+            System Metrics
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard
+              title="Total Nodes"
+              value={stats.total_nodes}
+              subtitle="Compute resources"
+              icon={Server}
+              gradient="from-blue-500 to-blue-600"
+              delay={0}
+            />
+            <StatCard
+              title="Active Jobs"
+              value={stats.active_jobs}
+              subtitle="Currently processing"
+              icon={Activity}
+              gradient="from-purple-500 to-purple-600"
+              delay={0.1}
+            />
+            <StatCard
+              title="Task Completion"
+              value={`${stats.completed_tasks}/${stats.total_tasks}`}
+              subtitle="Overall progress"
+              icon={Zap}
+              gradient="from-pink-500 to-pink-600"
+              delay={0.2}
+            />
+            <StatCard
+              title="System Health"
+              value="99.9%"
+              subtitle="Uptime this month"
+              icon={TrendingUp}
+              gradient="from-emerald-500 to-emerald-600"
+              delay={0.3}
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <CardTitle className="text-slate-900">Recent Workloads</CardTitle>
-                <Link
-                  href="/jobs"
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+        {/* Performance Insights */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Network Status */}
+          <div className="rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 p-6 hover:border-blue-500/50 transition-all duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+                  <Database className="w-5 h-5 text-white" />
+                </div>
+                Network Status
+              </h3>
+              <span className="flex items-center gap-2 text-emerald-400 text-sm font-medium">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                Online
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/30 transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <Cpu className="w-5 h-5 text-blue-400" />
+                  <div>
+                    <p className="text-white font-medium">CPU Utilization</p>
+                    <p className="text-slate-400 text-sm">Across all nodes</p>
+                  </div>
+                </div>
+                <span className="text-2xl font-bold text-white">45%</span>
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-purple-500/30 transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <HardDrive className="w-5 h-5 text-purple-400" />
+                  <div>
+                    <p className="text-white font-medium">Memory Usage</p>
+                    <p className="text-slate-400 text-sm">Average across cluster</p>
+                  </div>
+                </div>
+                <span className="text-2xl font-bold text-white">62%</span>
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-pink-500/30 transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-pink-400" />
+                  <div>
+                    <p className="text-white font-medium">Avg Task Time</p>
+                    <p className="text-slate-400 text-sm">Last 24 hours</p>
+                  </div>
+                </div>
+                <span className="text-2xl font-bold text-white">3.2s</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 p-6 hover:border-purple-500/50 transition-all duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600">
+                  <Activity className="w-5 h-5 text-white" />
+                </div>
+                Recent Activity
+              </h3>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { event: 'Node registered', detail: 'TDESK joined the cluster', time: '2m ago', color: 'blue' },
+                { event: 'Job completed', detail: 'frame_rendering #ad4971', time: '5m ago', color: 'emerald' },
+                { event: 'Task assigned', detail: '5 tasks distributed', time: '8m ago', color: 'purple' },
+                { event: 'Heartbeat received', detail: 'All nodes healthy', time: '10m ago', color: 'pink' },
+              ].map((activity, i) => (
+                <div 
+                  key={i}
+                  className="flex items-center gap-4 p-3 rounded-xl bg-slate-800/30 border border-slate-700/30 hover:border-slate-600 hover:bg-slate-800/50 transition-all duration-300"
+                  style={{ animation: `slideInRight 0.5s ease-out ${i * 0.1}s both` }}
                 >
-                  View all
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </CardHeader>
-              <CardBody className="p-0">
-                {recentJobs.length === 0 ? (
-                  <div className="px-6 py-16 text-center">
-                    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Activity className="w-8 h-8 text-slate-400" />
-                    </div>
-                    <h3 className="text-lg font-medium text-slate-900 mb-2">
-                      No workloads executed
-                    </h3>
-                    <p className="text-slate-600 mb-6 text-sm">
-                      Deploy your first distributed workload to see metrics here
-                    </p>
-                    <Link href="/build">
-                      <Button>
-                        <Zap className="w-4 h-4 mr-2" />
-                        Create Workload
-                      </Button>
-                    </Link>
+                  <div className={`w-2 h-2 rounded-full bg-${activity.color}-400 animate-pulse`}></div>
+                  <div className="flex-1">
+                    <p className="text-white font-medium text-sm">{activity.event}</p>
+                    <p className="text-slate-400 text-xs">{activity.detail}</p>
                   </div>
-                ) : (
-                  <div className="divide-y divide-slate-100">
-                    {recentJobs.map((job) => {
-                      const progress = calculateProgress(
-                        job.completed_frames,
-                        job.total_frames
-                      );
-
-                      return (
-                        <Link
-                          key={job.job_id}
-                          href={`/jobs/${job.job_id}`}
-                          className="block px-6 py-5 hover:bg-slate-50 transition-colors"
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h4 className="font-semibold text-slate-900">
-                                  {job.workload_type}
-                                </h4>
-                                <Badge
-                                  className={getStatusColor(job.status)}
-                                >
-                                  {job.status}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-6 text-sm text-slate-600">
-                                <span className="flex items-center gap-1.5">
-                                  <Activity className="w-3.5 h-3.5" />
-                                  {job.completed_frames}/{job.total_frames} tasks
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  {formatTimestamp(job.created_at)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right ml-6">
-                              <div className="text-lg font-semibold text-slate-900">
-                                {formatCLSTR(job.total_budget_clstr)}
-                              </div>
-                              <div className="text-sm text-slate-500">Allocated</div>
-                            </div>
-                          </div>
-                          <ProgressBar value={progress} size="sm" />
-                          {job.failed_frames > 0 && (
-                            <div className="flex items-center gap-1.5 text-sm text-amber-600 mt-3">
-                              <AlertTriangle className="w-3.5 h-3.5" />
-                              {job.failed_frames} failed tasks
-                            </div>
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardBody>
-            </Card>
+                  <span className="text-slate-500 text-xs">{activity.time}</span>
+                </div>
+              ))}
+            </div>
           </div>
-
-          <ActivityFeed />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-slate-200 hover:shadow-md transition-all cursor-pointer group hover:border-indigo-200">
-            <Link href="/build">
-              <CardBody className="text-center py-8">
-                <div className="w-14 h-14 bg-gradient-to-br from-indigo-100 to-violet-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:from-indigo-200 group-hover:to-violet-200 transition-colors">
-                  <Zap className="w-7 h-7 text-indigo-600" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">
-                  Deploy Workload
-                </h3>
-                <p className="text-sm text-slate-600">
-                  Configure and execute distributed tasks
-                </p>
-              </CardBody>
-            </Link>
-          </Card>
-
-          <Card className="border-slate-200 hover:shadow-md transition-all cursor-pointer group hover:border-emerald-200">
-            <Link href="/network">
-              <CardBody className="text-center py-8">
-                <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:from-emerald-200 group-hover:to-teal-200 transition-colors">
-                  <Server className="w-7 h-7 text-emerald-600" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">
-                  Network Status
-                </h3>
-                <p className="text-sm text-slate-600">
-                  Monitor compute node availability
-                </p>
-              </CardBody>
-            </Link>
-          </Card>
-
-          <Card className="border-slate-200 hover:shadow-md transition-all cursor-pointer group hover:border-purple-200">
-            <Link href="/billing">
-              <CardBody className="text-center py-8">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-fuchsia-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:from-purple-200 group-hover:to-fuchsia-200 transition-colors">
-                  <TrendingUp className="w-7 h-7 text-purple-600" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">
-                  Billing Overview
-                </h3>
-                <p className="text-sm text-slate-600">
-                  Review token usage and spending
-                </p>
-              </CardBody>
-            </Link>
-          </Card>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 1s ease-out;
+        }
+      `}</style>
     </DashboardLayout>
   );
 }

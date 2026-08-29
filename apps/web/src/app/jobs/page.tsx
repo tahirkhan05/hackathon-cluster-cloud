@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Activity, Clock, Zap, CheckCircle, XCircle, Loader } from 'lucide-react';
 
 interface Job {
   job_id: string;
   workload_type: string;
   status: string;
-  total_frames: number;
-  completed_frames: number;
-  failed_frames: number;
-  total_budget_clstr: number;
+  total_tasks: number;
+  completed_tasks: number;
+  failed_tasks: number;
+  budget_clstr: number;
   created_at: string;
+  progress_percentage: number;
 }
 
 export default function JobsPage() {
@@ -40,167 +42,192 @@ export default function JobsPage() {
   const filteredJobs = Array.isArray(jobs) ? jobs.filter((job) => {
     if (filter === 'all') return true;
     if (filter === 'active')
-      return ['RUNNING', 'ALLOCATED', 'SCHEDULING', 'PENDING'].includes(job.status);
-    if (filter === 'completed') return job.status === 'COMPLETED';
-    if (filter === 'failed') return job.status === 'FAILED';
+      return ['running', 'pending', 'submitted'].includes(job.status.toLowerCase());
+    if (filter === 'completed') return job.status.toLowerCase() === 'completed';
+    if (filter === 'failed') return job.status.toLowerCase() === 'failed';
     return true;
   }) : [];
 
   const stats = {
     total: jobs.length,
     active: jobs.filter((j) =>
-      ['RUNNING', 'ALLOCATED', 'SCHEDULING', 'PENDING'].includes(j.status)
+      ['running', 'pending', 'submitted'].includes(j.status.toLowerCase())
     ).length,
-    completed: jobs.filter((j) => j.status === 'COMPLETED').length,
-    failed: jobs.filter((j) => j.status === 'FAILED').length,
+    completed: jobs.filter((j) => j.status.toLowerCase() === 'completed').length,
+    failed: jobs.filter((j) => j.status.toLowerCase() === 'failed').length,
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'COMPLETED': return 'text-emerald-400 bg-emerald-500/10';
-      case 'RUNNING': return 'text-blue-400 bg-blue-500/10';
-      case 'FAILED': return 'text-red-400 bg-red-500/10';
-      case 'PENDING': return 'text-yellow-400 bg-yellow-500/10';
-      default: return 'text-slate-400 bg-slate-500/10';
-    }
+  const getStatusConfig = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'completed') return { 
+      color: 'from-emerald-500 to-emerald-600', 
+      bg: 'bg-emerald-500/10', 
+      border: 'border-emerald-500/30',
+      text: 'text-emerald-400',
+      icon: CheckCircle
+    };
+    if (s === 'running') return { 
+      color: 'from-blue-500 to-blue-600', 
+      bg: 'bg-blue-500/10', 
+      border: 'border-blue-500/30',
+      text: 'text-blue-400',
+      icon: Zap
+    };
+    if (s === 'failed') return { 
+      color: 'from-red-500 to-red-600', 
+      bg: 'bg-red-500/10', 
+      border: 'border-red-500/30',
+      text: 'text-red-400',
+      icon: XCircle
+    };
+    return { 
+      color: 'from-yellow-500 to-yellow-600', 
+      bg: 'bg-yellow-500/10', 
+      border: 'border-yellow-500/30',
+      text: 'text-yellow-400',
+      icon: Loader
+    };
   };
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="p-8 text-center text-slate-400">Loading jobs...</div>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+          </div>
+        </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-8 pb-8">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">Jobs</h1>
-          <p className="text-slate-400 mt-1">Distributed workload execution</p>
+        <div className="animate-fadeIn">
+          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+            <div className="w-1.5 h-10 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+            Jobs Dashboard
+          </h1>
+          <p className="text-slate-400 text-lg">Monitor and manage your distributed workloads</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <button
-            onClick={() => setFilter('all')}
-            className={`text-left bg-slate-800/50 rounded-lg p-4 border transition-colors ${
-              filter === 'all' ? 'border-indigo-500' : 'border-slate-700/50 hover:border-slate-600'
-            }`}
-          >
-            <div className="text-slate-400 text-sm">Total Jobs</div>
-            <div className="text-2xl font-bold text-slate-100 mt-1">
-              {stats.total}
-            </div>
-          </button>
-
-          <button
-            onClick={() => setFilter('active')}
-            className={`text-left bg-slate-800/50 rounded-lg p-4 border transition-colors ${
-              filter === 'active' ? 'border-indigo-500' : 'border-slate-700/50 hover:border-slate-600'
-            }`}
-          >
-            <div className="text-slate-400 text-sm">Active</div>
-            <div className="text-2xl font-bold text-blue-400 mt-1">
-              {stats.active}
-            </div>
-          </button>
-
-          <button
-            onClick={() => setFilter('completed')}
-            className={`text-left bg-slate-800/50 rounded-lg p-4 border transition-colors ${
-              filter === 'completed' ? 'border-indigo-500' : 'border-slate-700/50 hover:border-slate-600'
-            }`}
-          >
-            <div className="text-slate-400 text-sm">Completed</div>
-            <div className="text-2xl font-bold text-emerald-400 mt-1">
-              {stats.completed}
-            </div>
-          </button>
-
-          <button
-            onClick={() => setFilter('failed')}
-            className={`text-left bg-slate-800/50 rounded-lg p-4 border transition-colors ${
-              filter === 'failed' ? 'border-indigo-500' : 'border-slate-700/50 hover:border-slate-600'
-            }`}
-          >
-            <div className="text-slate-400 text-sm">Failed</div>
-            <div className="text-2xl font-bold text-red-400 mt-1">
-              {stats.failed}
-            </div>
-          </button>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[
+            { label: 'Total Jobs', value: stats.total, gradient: 'from-blue-500 to-blue-600', delay: 0 },
+            { label: 'Active', value: stats.active, gradient: 'from-purple-500 to-purple-600', delay: 0.1 },
+            { label: 'Completed', value: stats.completed, gradient: 'from-emerald-500 to-emerald-600', delay: 0.2 },
+            { label: 'Failed', value: stats.failed, gradient: 'from-red-500 to-red-600', delay: 0.3 },
+          ].map((stat, i) => (
+            <button
+              key={stat.label}
+              onClick={() => setFilter(stat.label.toLowerCase() === 'total jobs' ? 'all' : stat.label.toLowerCase())}
+              className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border p-6 hover:-translate-y-1 transition-all duration-500 hover:shadow-xl ${
+                filter === (stat.label.toLowerCase() === 'total jobs' ? 'all' : stat.label.toLowerCase())
+                  ? 'border-blue-500 shadow-lg shadow-blue-500/20'
+                  : 'border-slate-700/50 hover:border-blue-500/50'
+              }`}
+              style={{ animation: `fadeInUp 0.6s ease-out ${stat.delay}s both` }}
+            >
+              <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${stat.gradient}`}></div>
+              <div className="relative">
+                <p className="text-slate-400 text-sm font-medium mb-2">{stat.label}</p>
+                <p className="text-4xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{stat.value}</p>
+              </div>
+              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+            </button>
+          ))}
         </div>
 
         {/* Jobs List */}
-        <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 overflow-hidden">
-          <div className="p-4 border-b border-slate-700/50">
-            <h2 className="text-lg font-semibold text-slate-100">
+        <div className="rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 overflow-hidden animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+          <div className="p-6 border-b border-slate-700/50 bg-gradient-to-r from-slate-800/50 to-slate-800/30">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <Activity className="w-6 h-6 text-blue-400" />
               {filter === 'all' ? 'All Jobs' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Jobs`}
             </h2>
           </div>
 
           {filteredJobs.length === 0 ? (
-            <div className="p-8 text-center text-slate-400">
-              {filter === 'all' ? 'No jobs created yet' : `No ${filter} jobs`}
+            <div className="p-16 text-center">
+              <div className="inline-flex p-4 rounded-full bg-slate-800 mb-4">
+                <Activity className="w-8 h-8 text-slate-600" />
+              </div>
+              <p className="text-slate-400 text-lg">
+                {filter === 'all' ? 'No jobs created yet' : `No ${filter} jobs`}
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-slate-700/50">
-              {filteredJobs.map((job) => {
-                const progress = job.total_frames > 0 
-                  ? Math.round((job.completed_frames / job.total_frames) * 100)
-                  : 0;
-
+              {filteredJobs.map((job, index) => {
+                const statusConfig = getStatusConfig(job.status);
+                const StatusIcon = statusConfig.icon;
+                
                 return (
                   <div
                     key={job.job_id}
-                    className="p-4 hover:bg-slate-700/30 transition-colors"
+                    className="p-6 hover:bg-slate-800/30 transition-all duration-300 group"
+                    style={{ animation: `slideInRight 0.5s ease-out ${index * 0.05}s both` }}
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(job.status)}`}>
-                          {job.status}
-                        </span>
-                        <span className="text-slate-100 font-medium">
-                          {job.workload_type.replace(/_/g, ' ')}
-                        </span>
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl bg-gradient-to-br ${statusConfig.color} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                          <StatusIcon className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">
+                            {job.workload_type.replace(/_/g, ' ').toUpperCase()}
+                          </h3>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.border} ${statusConfig.text} border`}>
+                              {job.status.toUpperCase()}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
+                              <Clock className="w-4 h-4" />
+                              {new Date(job.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-slate-400">
-                        {new Date(job.created_at).toLocaleString()}
+                      
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-white">{Math.round(job.progress_percentage)}%</p>
+                        <p className="text-slate-400 text-sm">Complete</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex gap-6">
-                        <div>
-                          <span className="text-slate-400">Progress: </span>
-                          <span className="text-slate-100">{job.completed_frames}/{job.total_frames} frames ({progress}%)</span>
-                        </div>
-                        {job.failed_frames > 0 && (
-                          <div>
-                            <span className="text-slate-400">Failed: </span>
-                            <span className="text-red-400">{job.failed_frames}</span>
-                          </div>
-                        )}
-                        <div>
-                          <span className="text-slate-400">Budget: </span>
-                          <span className="text-slate-100">{job.total_budget_clstr.toLocaleString()} CLSTR</span>
-                        </div>
+                    {/* Progress Stats */}
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                        <p className="text-slate-400 text-xs mb-1">Total Tasks</p>
+                        <p className="text-lg font-bold text-white">{job.total_tasks}</p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                        <p className="text-slate-400 text-xs mb-1">Completed</p>
+                        <p className="text-lg font-bold text-emerald-400">{job.completed_tasks}</p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                        <p className="text-slate-400 text-xs mb-1">Budget</p>
+                        <p className="text-lg font-bold text-blue-400">{job.budget_clstr} CLSTR</p>
                       </div>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="mt-3 w-full bg-slate-700 rounded-full h-2">
+                    <div className="relative w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                       <div
-                        className="bg-indigo-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${progress}%` }}
-                      ></div>
+                        className={`absolute inset-y-0 left-0 bg-gradient-to-r ${statusConfig.color} rounded-full transition-all duration-1000 shadow-lg`}
+                        style={{ width: `${job.progress_percentage}%` }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                      </div>
                     </div>
 
-                    <div className="text-xs text-slate-500 mt-2 font-mono">
-                      {job.job_id}
-                    </div>
+                    {/* Job ID */}
+                    <p className="text-xs text-slate-500 mt-3 font-mono">{job.job_id}</p>
                   </div>
                 );
               })}
