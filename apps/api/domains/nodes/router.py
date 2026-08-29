@@ -7,6 +7,7 @@ from database import get_db
 from domains.nodes.models import NodeStatus
 from domains.nodes.schemas import NodeRegister, NodeResponse, NodeHeartbeat, NodeListResponse
 from domains.nodes.service import NodeService
+from domains.nodes.failure_detector import FailureDetector
 
 router = APIRouter()
 
@@ -99,4 +100,50 @@ def detect_stale_nodes(db: Session = Depends(get_db)):
     return {
         "marked_offline": count,
         "message": f"Marked {count} stale nodes offline"
+    }
+
+
+@router.post("/maintenance/detect-failures")
+def detect_failures(db: Session = Depends(get_db)):
+    """
+    Run failure detection cycle.
+    
+    Detects:
+    - Nodes with missed heartbeats
+    - Recovered nodes
+    - Stale (zombie) tasks
+    
+    Creates incidents and updates node status.
+    Idempotent: safe to call repeatedly.
+    """
+    detector = FailureDetector(db)
+    summary = detector.run_detection_cycle()
+    return summary
+
+
+@router.get("/health/status")
+def get_health_status(db: Session = Depends(get_db)):
+    """
+    Get overall cluster health status.
+    
+    Returns counts of healthy/unhealthy nodes and open incidents.
+    """
+    from domains.incidents.models import Incident, IncidentStatus
+    from domains.nodes.models import Node
+    
+    nodes = db.query(Node).all()
+    
+    healthy_count = sum(1 for n in nodes if n.is_healthy)
+    unhealthy_count = len(nodes) - healthy_count
+    
+    open_incidents = db.query(Incident).filter(
+        Incident.status == IncidentStatus.OPEN
+    ).count()
+    
+    return {
+        "total_nodes": len(nodes),
+        "healthy_nodes": healthy_count,
+        "unhealthy_nodes": unhealthy_count,
+        "open_incidents": open_incidents,
+        "cluster_healthy": unhealthy_count == 0 and open_incidents == 0
     }
