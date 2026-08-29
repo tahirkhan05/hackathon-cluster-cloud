@@ -1,26 +1,40 @@
 """
 Demo endpoints for hackathon presentation.
 
-These endpoints provide manual controls for demonstrating
-ClusterCloud's failure recovery capabilities.
-
 ⚠️ WARNING: These endpoints should be DISABLED in production.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 import logging
+import os
 
 from database import get_db
 from domains.nodes.models import Node, NodeStatus
 from domains.incidents.models import Incident, IncidentType, IncidentSeverity, IncidentStatus
 from domains.tasks.models import Task, TaskStatus
-from domains.recovery.service import RecoveryService
+from domains.recovery.recovery_service import RecoveryService
 from domains.websocket.events import EventFactory
 from domains.websocket.router import broadcast_event_async
+from config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def check_demo_allowed():
+    """
+    Check if demo endpoints are allowed.
+    
+    Raises HTTPException if in production environment.
+    """
+    environment = os.getenv("ENVIRONMENT", "development").lower()
+    
+    if environment == "production" and not os.getenv("ENABLE_DEMO_ENDPOINTS", "false").lower() == "true":
+        raise HTTPException(
+            status_code=403,
+            detail="Demo endpoints are disabled in production. Set ENABLE_DEMO_ENDPOINTS=true to override."
+        )
 
 
 @router.post("/simulate-failure/{node_id}")
@@ -28,22 +42,19 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
     """
     Simulate a node failure for demo purposes.
     
-    This endpoint:
-    1. Marks the node as UNHEALTHY
-    2. Creates a failure incident
-    3. Triggers automatic recovery
-    
     ⚠️ DEMO ONLY - Disable in production
     """
+    check_demo_allowed()
+    
     logger.warning(f"DEMO: Simulating failure for node {node_id}")
     
-    # Get the node
     node = db.query(Node).filter_by(node_id=node_id).first()
     if not node:
         raise HTTPException(status_code=404, detail="Node not found")
     
     # Mark node as unhealthy
     node.status = NodeStatus.UNHEALTHY
+    node.is_healthy = False
     node.last_heartbeat = datetime.utcnow()
     db.commit()
     
@@ -69,19 +80,20 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
             "affected_tasks": 0
         }
     
-    # Get the job ID from first task
     job_id = active_tasks[0].job_id
     
     # Create incident
     incident = Incident(
         incident_type=IncidentType.NODE_FAILURE,
         severity=IncidentSeverity.HIGH,
-        status=IncidentStatus.DETECTED,
+        status=IncidentStatus.OPEN,
         related_job_id=job_id,
         related_node_id=node_id,
-        affected_task_ids=[task.task_id for task in active_tasks],
         description=f"Demo: Simulated failure of node {node.name}",
-        detected_at=datetime.utcnow()
+        detected_at=datetime.utcnow(),
+        metadata={
+            "incomplete_task_ids": [task.task_id for task in active_tasks]
+        }
     )
     db.add(incident)
     db.commit()
@@ -102,7 +114,8 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
     
     # Trigger automatic recovery
     try:
-        recovery_result = await RecoveryService.handle_incident(db, incident.incident_id)
+        recovery_service = RecoveryService(db)
+        recovery_result = recovery_service.recover_from_node_failure(incident)
         
         logger.info(f"DEMO: Recovery result: {recovery_result}")
         
@@ -115,12 +128,13 @@ async def simulate_node_failure(node_id: str, db: Session = Depends(get_db)):
         }
     
     except Exception as e:
-        logger.error(f"DEMO: Recovery failed: {e}")
+        logger.error(f"DEMO: Recovery failed: {e}", exc_info=True)
         return {
             "success": False,
             "message": f"Recovery failed: {str(e)}",
             "incident_id": incident.incident_id,
-            "affected_tasks": len(active_tasks)
+            "affected_tasks": len(active_tasks),
+            "error": str(e)
         }
 
 
@@ -129,17 +143,17 @@ async def reset_demo(db: Session = Depends(get_db)):
     """
     Reset demo state.
     
-    - Mark all nodes as HEALTHY
-    - Clear recent incidents
-    
     ⚠️ DEMO ONLY - Disable in production
     """
+    check_demo_allowed()
+    
     logger.warning("DEMO: Resetting demo state")
     
     # Reset all nodes to healthy
     nodes = db.query(Node).all()
     for node in nodes:
         node.status = NodeStatus.HEALTHY
+        node.is_healthy = True
     
     db.commit()
     
@@ -152,11 +166,7 @@ async def reset_demo(db: Session = Depends(get_db)):
 
 @router.get("/status")
 async def demo_status(db: Session = Depends(get_db)):
-    """
-    Get demo status overview.
-    
-    Returns current state for demo monitoring.
-    """
+    """Get demo status overview."""
     nodes = db.query(Node).all()
     incidents = db.query(Incident).filter(
         Incident.status != IncidentStatus.RESOLVED
@@ -165,7 +175,7 @@ async def demo_status(db: Session = Depends(get_db)):
     return {
         "total_nodes": len(nodes),
         "healthy_nodes": len([n for n in nodes if n.status == NodeStatus.HEALTHY]),
-        "unhealthy_nodes": len([n for n in nodes if n.status == NodeStatus.UNHEALTHY]),
+        "unhealthy_nodes": len([n for n in nodes if n.status != NodeStatus.HEALTHY]),
         "active_incidents": len(incidents),
         "incidents": [
             {
@@ -173,7 +183,7 @@ async def demo_status(db: Session = Depends(get_db)):
                 "type": inc.incident_type.value,
                 "status": inc.status.value,
                 "affected_node": inc.related_node_id,
-                "affected_tasks": len(inc.affected_task_ids)
+                "affected_tasks": len(inc.metadata.get("incomplete_task_ids", []))
             }
             for inc in incidents
         ]
